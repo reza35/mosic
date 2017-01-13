@@ -293,11 +293,9 @@ bad = [bad, findgen(40/dfac)+(posmax + 138.76/dfac), findgen(10)+(posmax + 210/d
 ;--  using mpfit package with 7 free parameters
 ;-----------------------------------------------------------------------------
   if (spar1[3] lt 4.0d/dfac)or(spar1[3] gt 52.0d/dfac) then spar1[3] = 10.0d/dfac
-  if (spar1[2] lt 5.0d) then spar1[2] = 5.0d
   if (abs(spar1[1] - pos_line) gt 20.) then spar1[1] = pos_line
-  if (abs(spar1[0]) lt 0.1) then spar1[0] = 0.1
 
-  fit0 = [spar1[2], spar1[1], spar1[3] > .1]
+  fit0 = [spar1[2] > 5., spar1[1], spar1[3] > .1]
   fit1 = [max(fitdg)*0.244d, max(fitdg)*0.065d, max(fitdg)*0.065d, max(fitdg)*0.065d] 
 
   range0=[0.1, 0.1, 0.8] 

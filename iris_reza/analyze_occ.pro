@@ -61,6 +61,7 @@ left =  0
 right =  n_elements(iline)-1
 if n_elements(winindex) eq 0 then windex  = 20 else windex = winindex
 if n_elements(av_fit) eq 0 then av_fit = [1., 4., pos_line,  2.]
+if n_elements(plt) eq 0 then plt = 0 else if (plt ne 0) then  plt = 1
 
 prof = iline
 
@@ -206,7 +207,7 @@ spar1=[ergs.b, ergs.p1, ergs.i1,  ergs.w1, chisq1, reform(ergs.sigma)]
 ;  if the fit is not satisfactory, then use random initialization 
 ;------------------------------------------------------------------------------
 if (chisq1 gt 1.) then begin
-    random_sg_fit, 30, px, py, ppy, ee, err_ave, bbc, 0.6, ergs, spar_new, fitsg_new
+    random_sg_fit, 200, px, py, ppy, ee, err_ave, bbc, 0.6, ergs, spar_new, fitsg_new
     if (spar_new[4] lt chisq1) then begin
          chisq1 = spar_new[4]
          fitsg = fitsg_new
@@ -280,7 +281,7 @@ if (max(fitsg)/rms gt 2.) then begin ;   6
      qpar1=[ergq.p1, ergq.i1, ergq.w1, ergq.i2, ergq.w2, ergq.i3, chisq4, reform(ergq.sigma)]
   endif
   ;---------------------------------------
-  ; try agin in case of  a failed fit
+  ; try agin in case of a failed fit
   ;---------------------------------------
   if (chisq4 gt chisq1*2.) then begin 
      py0 = median(py, 5)
