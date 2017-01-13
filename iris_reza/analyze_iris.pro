@@ -403,10 +403,14 @@ tvsclm, fe[*,*,1] > (s-1.) < (s+1.), xp=1*nx/zfac, yp=0, zm=zfac, cb=99
 tvsclm, cont,      xp=2*nx/zfac, yp=0, zm=zfac
 wait, 2.
 ;stop
-s = percentiles(kont, value=[0.6, .7, .99])
+s = percentiles(kont, value=[0.6, .89, .99])
 q = where((kont gt s[1])and(kont lt s[2]))
 i_cont = good_mean(cont(q))
-cont /= i_cont 
+cont /= i_cont
+if (max(cont) gt 2.)or(max(cont lt 0.9)) then begin
+   print, 'consider renormalization of the continuum map'
+   stop
+endif   
 cont = cont < 2.0 > 0.
 ;-------------------------------------
 ;--  280 nm continuum properties
@@ -576,8 +580,8 @@ erase
 ;endif
 ;-----------------------------------------------------------------
 
+t_start = systime(/seconds)
 for i=0, nx-1 do begin
-   t_start = systime(/seconds)
 
    v = readfits(data, hed, nslice=i, /silent) 
    q = where(~finite(v), count)
@@ -585,8 +589,10 @@ for i=0, nx-1 do begin
    v = despike_iris_raster(v, master_o1 + OI_range[0], master_o1 + OI_range[0])
  
    for j=0, ny-1 do begin
+        d_stp = 50.0 / (dispersion_fuv / 1.298)
+        t_stp = 15.0 / (dispersion_fuv / 1.298)
         tmp = gauss_smooth(reform(v[OI_range[0]:OI_range[1], j+z0]),1, /edge_truncate)
-        o_i_kont[i,j] = good_mean(tmp[((master_o1 - 50)>0):(master_o1 - 15)])
+        o_i_kont[i,j] = good_mean(tmp[((master_o1 - d_stp)>0):(master_o1 - t_stp)])
         ;-----------------------------------------------------------------------
         if (stddev(tmp) gt 0.5) then begin   
         erg = analyze_occ(tmp, 0, np-1, master_o1, dispersion_fuv, do_plot)
@@ -609,7 +615,7 @@ for i=0, nx-1 do begin
      tvsclm, occ[0:i, *, 4]<100.,   xp=5*nx/zfac, zm=zfac  ; chi square
      tvsclm, occ_q[0:i, *, 6]<100., xp=6*nx/zfac, zm=zfac  ; chi square
   endif
-   if ((i mod 10) eq 0)and(i gt 0) then print, i, nx-1 -i, round( (systime(/seconds) - t_start)/float(i+1)  * float(nx-1 -i) / 60.), ' min'
+   if ((i mod 10) eq 0)and(i gt 0) then print, i, nx-1 -i, round( (systime(/seconds) - t_start)/float(i+1)* float(nx-1 -i) / 60.),' min'
 endfor
 
 ;-----------------------------------------------
@@ -900,11 +906,11 @@ for i=0, nx-1 do begin
       for ip=0,3 do tvsclm, reform(si_iv2_q[0:i,*,ip]), xp=nx*ip/zfac, zm=zfac
       tvsclm, si_iv2_v[0:i, *, 7],         xp=nx*4/zfac, yp=zfac, zm=zfac ; chi square
       tvsclm, si_iv2_q[0:i, *, 7],         xp=nx*5/zfac, yp=zfac, zm=zfac ; chi square
-      tvsclm, si_iv2_z[0:i, *, 10],         xp=nx*6/zfac, yp=zfac, zm=zfac ; chi square
-      tvsclm, si_iv2_f[0:i, *, 13],         xp=nx*7/zfac, yp=zfac, zm=zfac ; chi square
+      tvsclm, si_iv2_z[0:i, *, 10],        xp=nx*6/zfac, yp=zfac, zm=zfac ; chi square
+      tvsclm, si_iv2_f[0:i, *, 13],        xp=nx*7/zfac, yp=zfac, zm=zfac ; chi square
       ;stop
    endif
-   if ((i mod 10) eq 0)and(i gt 0) then print, i, nx-1 -i, round( (systime(/seconds) - t_start)/float(i+1)  * float(nx-1 -i) / 60.), ' min'
+   if ((i mod 10) eq 0)and(i gt 0) then print, i, nx-1 -i, round((systime(/seconds) - t_start)/float(i+1) * float(nx-1 -i) / 60.),' min'
 
 endfor
 
@@ -1160,7 +1166,7 @@ save, filename=outfile_si, fe, cont, si_iv1, si_iv1_v,  dispersion_fuv,$
       wt_si_iv2_f1, ti_si_iv2_f1, wnt_si_iv2_f1, si_iv2q_vel, o_iv_vel, $
       wt_si_iv2_f2, ti_si_iv2_f2, wnt_si_iv2_f2, wnt_o_iv_f
 endif else begin
-save, filename=outfile_si, fe, cont, si_kont, $
+save, filename=outfile_si, fe, cont, $
       si_iv2, si_iv2_v, si_iv2_q, si_iv2_z, si_iv2_f, si_iv2_bnd, dispersion_fuv,$
       si_iv_tot, si2_fit_gauss, euv_temporal_gradient, master_si1, master_si2, $
       ned_o4, ergm, si_iv2_vel, si_iv2f_vel, si_iv2q_vel, o_iv_vel,$
@@ -1251,7 +1257,7 @@ for i=0, nx-1 do begin
       tvsclm, cii_p[0:i,*,13],xp=5*nx/zfac, yp=0, zm=zfac ; chi-square, penta Gaussian
       ;stop
    endif
-   if ((i mod 10) eq 0)and(i gt 0) then print, i, nx-1 -i, round((systime(/seconds) - t_start)/(float(i+1)) * float(nx-1 -i) / 60.), ' min'
+   if ((i mod 10) eq 0)and(i gt 0) then print, i, nx-1 -i, round((systime(/seconds)- t_start)/(float(i+1))* float(nx-1 -i) / 60.),' min'
 endfor
 
 restore, outfile_fuv_temp
@@ -1398,6 +1404,7 @@ endif
 ;++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ;------------------------------------------------------------------
 if (do_mg eq 1) then begin
+
 the_line = 'Mg'
 mg_range[1] = mg_range[1] < (n_elements(avprof)-1)
 if (num_files eq 1) then vv = avprof[Mg_range[0]:Mg_range[1]] else vv = avprof
@@ -1427,7 +1434,7 @@ if (do_quiet ne 1) then begin
   window, 13, xs=nx*9/zfac, ys=ny*2/zfac, title='Mg II k line parameters'
   if (do_gauss eq 1) then window, 19, xs=nx*7/zfac, ys=ny/zfac, title='Mg II k Gaussian fits'
 endif
-;stop
+
 t_start = systime(/seconds)
 for i=0, nx-1 do begin
    v = readfits(data, hed, nslice=i, /silent) 
@@ -1533,15 +1540,15 @@ endfor
      tvsclm, em_lines[0:i,*,1], zm=zfac, xp=7*nx/zfac, yp=ny/zfac
      tvsclm, em_lines[0:i,*,3], zm=zfac, xp=8*nx/zfac, yp=ny/zfac
   endif
-;  if ((i mod 10) eq 0)and(i gt 0) then print, i, nx-1 -i, round( (systime(/seconds) - t_start)/float(i+1)  * float(nx-1 -i) / 60.), ' min'
+  if ((i mod 10) eq 0)and(i gt 0) then print, i, nx-1 -i, round( (systime(/seconds)- t_start)/float(i+1)* float(nx-1 -i) / 60.), ' min'
 
-  print, i, nx-1 -i, round((systime(/seconds)- t_start)/float(i+1)* float(nx-1 -i) / 60.),'     min'
-  if ((i mod 5) eq 0) then begin
-     print, '-------------------------------------------------------------------------'
-     print, good_mean(k_dpar[0:i, *,6]), stddev(k_dpar[0:i, *,6]), max(k_dpar[0:i, *,6])
-     print, good_mean(k_tpar[0:i, *,9]), stddev(k_tpar[0:i, *,9]), max(k_tpar[0:i, *,9])
-     print, '-------------------------------------------------------------------------'
-  endif
+;  print, i, nx-1 -i, round((systime(/seconds)- t_start)/float(i+1)* float(nx-1 -i) / 60.),'     min'
+;  if ((i mod 5) eq 0) then begin
+;     print, '-------------------------------------------------------------------------'
+;     print, good_mean(k_dpar[0:i, *,6]), stddev(k_dpar[0:i, *,6]), max(k_dpar[0:i, *,6])
+;     print, good_mean(k_tpar[0:i, *,9]), stddev(k_tpar[0:i, *,9]), max(k_tpar[0:i, *,9])
+;     print, '-------------------------------------------------------------------------'
+;  endif
  
 endfor
 
