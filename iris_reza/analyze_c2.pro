@@ -158,7 +158,7 @@ endif
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
   if (chisq1 gt 1.) then begin
-        random_sg_fit, 50, px, py, ppy, ee, err_ave, tcc, 0.6, ergs, spar_new, fitsg_new
+        random_sg_fit, 30, px, py, ppy, ee, err_ave, tcc, 0.6, ergs, spar_new, fitsg_new
         if (spar_new[4] lt chisq1) then begin
            chisq1 = spar_new[4]
            fitsg = fitsg_new
@@ -214,7 +214,7 @@ endif
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
   if (chisq2 gt 1.)or(chisq2 lt 0.1)or(ergd.i1/ergd.i2 gt 1.5)or(ergd.i1/ergd.i2 lt 0.9) then begin
-        random_dg_cii_fit, 30, px, pyn, ee, err_ave, bcc, 0.2, spar1, ergd, dpar_new, fitdg_new
+        random_dg_cii_fit, 20, px, pyn, ee, err_ave, bcc, 0.2, spar1, ergd, dpar_new, fitdg_new
         if (dpar_new[5] lt chisq2) then begin
            chisq2 = dpar_new[5]
            fitdg = fitdg_new + spar1[0]
