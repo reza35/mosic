@@ -278,7 +278,7 @@ if (do_cii eq 1) then begin
    cii_d = fltarr(nx, ny, 15)          ; C II 1335+1335 A line single Gaussian fitting
    cii_q = fltarr(nx, ny, 21)          ; C II 1335+1336 A line double Gaussian fitting
    cii_p = fltarr(nx, ny, 27)          ; C Ii lines  +  Ni II
-   cii_fit_gauss = fltarr(nx, ny, cii_range[1]-cii_range[0]+1, 4) ; fits
+   cii_fit_gauss = fltarr(nx, ny, cii_range[1]-cii_range[0]+1, 5) ; fits
 ;------------------------------------------------------------------------
 endif
 
@@ -1237,7 +1237,8 @@ for i=0, nx-1 do begin
           cii_fit_gauss[i, j, *, 0] = erg.sprf
           cii_fit_gauss[i, j, *, 1] = erg.sfit
           cii_fit_gauss[i, j, *, 2] = erg.dfit
-          cii_fit_gauss[i, j, *, 3] = erg.pfit
+          cii_fit_gauss[i, j, *, 3] = erg.qfit
+          cii_fit_gauss[i, j, *, 4] = erg.pfit
         endif
      endfor
    ;print, nx-1 -i, FORMAT='(%"\b%d\b\b\b",$)'

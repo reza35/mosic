@@ -61,7 +61,7 @@ fitdg = fltarr(np)
 fitqg = fltarr(np)
 fitpg = fltarr(np)
 erg = {spar1:fltarr(9), dpar1:fltarr(15), qpar1:fltarr(21), ppar1:fltarr(27), sprf:fltarr(np), $
-       pfit:fltarr(np), dfit:fltarr(np), sfit:fltarr(np)}
+       pfit:fltarr(np), qfit:fltarr(np), dfit:fltarr(np), sfit:fltarr(np)}
 
 py = prof
 px = findgen(np)
@@ -158,7 +158,7 @@ endif
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
   if (chisq1 gt 1.) then begin
-        random_sg_fit, 10., px, py, ppy, ee, err_ave, tcc, 0.6, ergs, spar_new, fitsg_new
+        random_sg_fit, 50, px, py, ppy, ee, err_ave, tcc, 0.6, ergs, spar_new, fitsg_new
         if (spar_new[4] lt chisq1) then begin
            chisq1 = spar_new[4]
            fitsg = fitsg_new
@@ -214,7 +214,7 @@ endif
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
   if (chisq2 gt 1.)or(chisq2 lt 0.1)or(ergd.i1/ergd.i2 gt 1.5)or(ergd.i1/ergd.i2 lt 0.9) then begin
-        random_dg_cii_fit, 20, px, pyn, ee, err_ave, bcc, 0.2, spar1, ergd, dpar_new, fitdg_new
+        random_dg_cii_fit, 30, px, pyn, ee, err_ave, bcc, 0.2, spar1, ergd, dpar_new, fitdg_new
         if (dpar_new[5] lt chisq2) then begin
            chisq2 = dpar_new[5]
            fitdg = fitdg_new + spar1[0]
@@ -384,9 +384,12 @@ erg.qpar1 = qpar1         ; quad Gaussian fit parameters
 erg.ppar1 = ppar1         ; penta Gaussian fit parameters
 
 erg.sprf  = py            ; line profile
-erg.sfit  = fitsg         ; single Gaussian fit to each C II line profile
-erg.dfit  = fitdg         ; double Gaussian fit to each C II line profile
+erg.sfit  = fitsg         ; single Gaussian fit to one C II line profile
+erg.dfit  = fitdg         ; single Gaussian fit to each C II line profile
+erg.qfit  = fitqg         ; double Gaussian fit to each C II line profile
 erg.pfit  = fitpg         ; penta Gaussian fit to each C II line profile + Ni II
+
+ 
 
 return,erg
 end
