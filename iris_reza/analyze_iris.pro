@@ -39,6 +39,8 @@ pro analyze_iris, filepath, do_mg=do_mg, do_gauss=do_gauss, do_cii=do_cii, do_si
 ; May 31, 2016 : program works on off-limb data
 ;  
 ; Jun 01, 2016 : dummy O I velocity gradient, as sometimes this channel is missing in the data
+;
+; Jan 27, 2017 : keep 280 nm continuum intensity in DN units
 ;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
@@ -236,6 +238,7 @@ ny = pos[1]-pos[0]+1  ; analyze only the selected range along the slit
 ;------------------------------------------------
 if (do_cont eq 1) then begin
   cont = fltarr(nx, ny)
+  kont = fltarr(nx, ny)
   fe = fltarr(nx, ny, 2)
 endif
 if (do_mg eq 1) then begin
@@ -372,7 +375,8 @@ for i=0, nx-1 do begin
 
    for j=0, ny-1 do begin
       tmp = reform(v[ct_range[0]:ct_range[1], j + z0])
-      
+
+      kont[i,j] = max(median(tmp,5))
       cont[i,j] = good_mean(tmp[0:round(ctd/4.)])
       chk = where(tmp le (-10.0), count)
       ;-----------------------------
@@ -386,9 +390,15 @@ for i=0, nx-1 do begin
          endfor
       endif 
    endfor
+   print, nx-1-i
 endfor
 
-stdev_despike, cont, 10, 4
+aux = percentiles(kont/max(kont), value=[0.99, 1.])
+kont = kont < (max(kont) * aux[0])
+aux = percentiles(cont/max(cont), value=[0.995, 1.])
+cont = cont < (max(cont) * aux[0])
+
+;stdev_despike, cont, 10, 4
 u = reform(fe[*,*,1])  &   stdev_despike, u, 10, 3   &  fe[*,*,1] = u
 u = reform(fe[*,*,0])  &   stdev_despike, u, 10, 3   &  fe[*,*,0] = u
 
@@ -409,7 +419,7 @@ i_cont = good_mean(cont(q))
 cont /= i_cont
 if (max(cont) gt 2.)or(max(cont lt 0.9)) then begin
    print, 'consider renormalization of the continuum map'
-   stop
+   ;stop
 endif   
 cont = cont < 2.0 > 0.
 ;-------------------------------------
@@ -506,10 +516,9 @@ tvsclm, cont < 1.9, zm=zfac
 for i = 0, 1 do tvsclm,  fe[*,*,i] < 2000. > (-2000.), xp=nx*(i+1)/zfac, yp=0, zm=zfac, cb=99
 loadct, 0, /silent
 
-save, filename=outfile_cont, cont, fe, i_cont, temporal_gradient
+save, filename=outfile_cont, kont, cont, fe, i_cont, temporal_gradient
 
 endif
-
 restore, outfile_cont
 
 
