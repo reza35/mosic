@@ -133,7 +133,7 @@ endif
   range0 = [0.1, 0.6, 0.04, 0.7] 
   ppy = median(py, 3)
 
-  tcc = where((px gt (posmax - 20/dfac))and(px lt (posmax + 60/dfac)<(np-1)))
+  tcc = where((px gt (posmax - 30/dfac))and(px lt (posmax + 60/dfac)<(np-1)))
 
   ergs = my_sgf(px[tcc], ppy[tcc], ee[tcc], fit0, range0, 1.0d, tcc, /double)
   fitsg = rgauss(px, [ergs.b, ergs.i1, ergs.p1,  ergs.w1])
