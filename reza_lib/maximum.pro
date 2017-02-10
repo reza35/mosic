@@ -17,9 +17,6 @@ s = size(arr)
 nb = s[1]
 xout = fltarr(9)
 
-p = max(arr, xin)
-;i = xin+1
-
 nc = 7
 xf = findgen(nc) + xin - 3
 if (max(abs(arr)) le 0.02)or(nb lt 10) then xf = findgen(5) + xin - 2.0d

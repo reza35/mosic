@@ -15,7 +15,6 @@ pro minimum, xin, arr, xout
 
 s = size(arr)
 nb = s[1]
-p = min(arr, xin)
 xout = fltarr(9)
 
 nc = 7
