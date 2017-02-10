@@ -24,7 +24,7 @@ yf = arr[xf]
 
   res = poly_fit(xf, yf, 2, /double)
   yres = res[0] + res[1]*xf + res[2] * xf^2
-  oplot, xf, yres;, linestyle=1
+  ;oplot, xf, yres;, linestyle=1
  
   xout[0:2] = res
   xout[3] = -res[1]/(2*res[2])
