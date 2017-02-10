@@ -1,4 +1,4 @@
-pro maximum, arr, xout
+pro maximum, xin, arr, xout
 
 ;+
 ;===============================================================
@@ -33,9 +33,9 @@ yf = arr[xf] * 1.0d
   xout[3] = -res[1]/(2*res[2])
   xout[4] = max(yres)
   xout[5] = min(xf)
-  xout[6] = res[0] + res[1]*xout[6] + res[2] * xout[6]^2
+  xout[6] = res[0] + res[1]*xout[5] + res[2] * xout[5]^2
   xout[7] = max(xf)
-  xout[8] = res[0] + res[1]*xout[8] + res[2] * xout[8]^2
+  xout[8] = res[0] + res[1]*xout[7] + res[2] * xout[7]^2
 
 
 if (total(~finite(xout)) gt 0.) then begin
@@ -57,9 +57,9 @@ yf = arr[xf]
   xout[3] = -res[1]/(2*res[2])
   xout[4] = max(yres)
   xout[5] = min(xf)
-  xout[6] = res[0] + res[1]*xout[6] + res[2] * xout[6]^2
+  xout[6] = res[0] + res[1]*xout[5] + res[2] * xout[5]^2
   xout[7] = max(xf)
-  xout[8] = res[0] + res[1]*xout[8] + res[2] * xout[8]^2
+  xout[8] = res[0] + res[1]*xout[7] + res[2] * xout[7]^2
 endif
 
 end

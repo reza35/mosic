@@ -1,4 +1,4 @@
-pro minimum, arr, xout
+pro minimum, xin, arr, xout
 
 ;+
 ;===============================================================
@@ -25,15 +25,15 @@ yf = arr[xf]
 
   res = poly_fit(xf, yf, 2, /double)
   yres = res[0] + res[1]*xf + res[2] * xf^2
-  ;oplot, xf, yres;, linestyle=1
+  oplot, xf, yres;, linestyle=1
  
   xout[0:2] = res
   xout[3] = -res[1]/(2*res[2])
   xout[4] = min(yres)
   xout[5] = min(xf)
-  xout[6] = res[0] + res[1]*xout[6] + res[2] * xout[6]^2
+  xout[6] = res[0] + res[1]*xout[5] + res[2] * xout[5]^2
   xout[7] = max(xf)
-  xout[8] = res[0] + res[1]*xout[8] + res[2] * xout[8]^2
+  xout[8] = res[0] + res[1]*xout[7] + res[2] * xout[7]^2
 
 if (total(~finite(xout)) gt 0.) then begin
 
@@ -56,9 +56,9 @@ yf = arr[xf]
   xout[3] = -res[1]/(2*res[2])
   xout[4] = min(yres)
   xout[5] = min(xf)
-  xout[6] = res[0] + res[1]*xout[6] + res[2] * xout[6]^2
+  xout[6] = res[0] + res[1]*xout[5] + res[2] * xout[5]^2
   xout[7] = max(xf)
-  xout[8] = res[0] + res[1]*xout[8] + res[2] * xout[8]^2
+  xout[8] = res[0] + res[1]*xout[7] + res[2] * xout[7]^2
 
 endif
 
