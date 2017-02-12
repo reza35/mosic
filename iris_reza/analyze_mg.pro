@@ -299,38 +299,69 @@ bbc = where(int_area gt (-1.0), bppc)
 
 if (bppc le 0) then return, erg
 ;------------------------------------------------
+;------------------------------------------------
 ;-- blend analysis around Mg II k line
 ;------------------------------------------------
+;------------------------------------------------
+if (disper lt 3.) then begin 
 u = iline[185:225]
-emb[0] = mean(u[0:3]) > mean(u[37:*])
-lpff, u, posm    &   if (~finite(posm)) then posm=20
-p = max(u)
-if (p lt (emb[0]*1.1)) then emb[1] = min(iline[200:210]) else emb[1]= p
+emb[0] = (mean(u[0:3]) > mean(u[37:*])) > 0.
+lpff, u[15:25], posm  & posm+=15.   &   if (~finite(posm)) then posm=20
+
+if (u[posm] lt emb[0]) then begin ; absorption line
+   minimum, posm, u, tmp
+   emb[1]=  tmp[4] > 0.
+   embv[0] = tmp[3] + 185.
+endif else begin
+   maximum, posm, u, tmp
+   emb[1]=  tmp[4] > 0.
+   embv[0] = tmp[3] + 185.
+endelse
+
 emb[2] = total(iline[185:225] - emb[0])* disper /konti ; observed equivalent width
-embv[0] = posm + 185.
 ;---------------------------
 u = iline[40:50]
-emb[3] = mean(u[0:1]) > mean(u[8:9])
+emb[3] = (mean(u[0:1]) > mean(u[8:9]))>0.
 lpff, u, posm    &   if (~finite(posm)) then posm=5
-emb[4] = iline[posm + 40.]
+emb[4] = iline[posm + 40.] >0.
 emb[5] = total(u - emb[3])* disper/konti  ; observed equivalent width
 embv[1] = posm + 40.
 ;---------------------------
 u = iline[165:175]
-emb[6] = mean(u[0:1]) > mean(u[8:9])
+emb[6] = (mean(u[0:1]) > mean(u[8:9]))>0.
 lpff, u, posm    &   if (~finite(posm)) then posm=5
-emb[7] = iline[posm + 165.]
+emb[7] = iline[posm + 165.]>0.
 emb[8] = total(u - emb[6])* disper/konti  ; observed equivalent width
 embv[2] = posm + 165.
 ;---------------------------
 if (np gt 263) then begin
   u = iline[252:262]
-  emb[9] = mean(u[0:1]) > mean(u[8:9])
+  emb[9] = (mean(u[0:1]) > mean(u[8:9]))>0.
   lpff, u, posm    &   if (~finite(posm)) then posm=5
-  emb[10] = iline[posm + 252.]
+  emb[10] = iline[posm + 252.] > 0.
   emb[11] = total(u - emb[9])* disper /konti ; observed equivalent width
   embv[3] = posm + 252.
 endif
+;---------------------------
+endif
+if (disper gt 3.)and(disper lt 6.) then begin 
+   u = iline[145:172]
+emb[0] = (mean(u[0:3]) > mean(u[27:*]))>0.
+lpff, u[12:21], posm  & posm+=12.   &   if (~finite(posm)) then posm=15
+
+if (u[posm] lt emb[0]) then begin ; absorption line
+   minimum, 4., u[12:21], tmp
+   emb[1]=  tmp[4] > 0.
+   embv[0] = tmp[3] + 154.
+endif else begin
+   maximum, 4., u[12:21], tmp
+   emb[1]=  tmp[4] > 0.
+   embv[0] = tmp[3] + 154.
+endelse
+emb[2] = total(iline[145:172] - emb[0])* disper /konti ; observed equivalent width
+
+endif
+
 ;---------------------------
 
 if (plt eq 1) and (do_gauss eq 0) then begin
@@ -985,7 +1016,8 @@ if (cmin eq 3) and (cmax eq 1) then begin ; in case of plage profiles
         lpff, saba, pos1
         pos1 += xmin[0]
         if (finite(pos1))and(pos1 lt (n_elements(prof)-10)) then begin
-           maximum, saba, ergebnis
+           jk = min(saba, xk)
+           maximum, xk, saba, ergebnis
            xmax = [ergebnis[3] + xmin[0], xmax[0]]   &   xmax = xmax(sort(xmax))
            xmaxs = fltarr(2,2)
            xmaxs[*,0] = xmax
@@ -1036,7 +1068,8 @@ if (xmax[0] lt xmin[0])and(cmax eq 1) then begin
         lpff, saba, pos1
         pos1 += xmin[0]
         if (finite(pos1))and(pos1 lt (n_elements(prof)-10)) then begin
-           maximum, saba, ergebnis
+           jk = min(saba, xk)
+           maximum, xk, saba, ergebnis
            xmax = ergebnis[3] + xmin[0]
            xmaxs[0,0] = xmax
            xmaxs[0,1] = prof[xmax]
@@ -1093,30 +1126,30 @@ if (type eq 1)or(type eq 2) then begin
   if (prof[xmax[0]-1] gt prof[xmax[0]]) then xmax[0]-=1
   mh=5
   mksp = prof[xmax[0]-mh:xmax[0]+2] 
-  maximum, mksp, ergebnis
+  maximum, mh, mksp, ergebnis
   xmax[0]=ergebnis[3] + xmax[0]- float(mh)
 
   if (prof[xmax[1]-1] gt prof[xmax[1]]) then xmax[1]-=1  &  mh = 2
   mksp = prof[xmax[1]-mh:xmax[1]+5]
-  maximum, mksp, ergebnis
+  maximum, mh, mksp, ergebnis
   xmax[1]=ergebnis[3] + xmax[1]- float(mh)
 
-  mksp = prof[xmin[1]-3:xmin[1]+3]  &  minimum, mksp, ergebnis
+  mksp = prof[xmin[1]-3:xmin[1]+3]  &  minimum, 3, mksp, ergebnis
   if (abs(ergebnis[3]-3.) lt 2.) then xmin[1]=ergebnis[3] + xmin[1]-3.   ; if the minimum is reasonalbe
 
 endif
 if (type eq 3) then begin
   if (prof[xmax-1] gt prof[xmax]) then xmax-=1
-  mksp = prof[xmax-5:xmax+4]  &  maximum, mksp, ergebnis
+  mksp = prof[xmax-5:xmax+4]  &  maximum, 5, mksp, ergebnis
   xmax=ergebnis[3] + xmax-5.
 
-  mksp = prof[xmin[1]-4:xmin[1]+4]  &  minimum, mksp, ergebnis
+  mksp = prof[xmin[1]-4:xmin[1]+4]  &  minimum, 4, mksp, ergebnis
   if (abs(ergebnis[3]-4.) lt 2.) then xmin[1]=ergebnis[3] + xmin[1]-4.   ; if the minimum is reasonalbe
 
 endif
 if (type eq 5)or(type eq 4) then begin
   if (prof[xmax-1] gt prof[xmax]) then xmax-=1
-  mksp = prof[xmax-5:xmax+4]  &  maximum, mksp, ergebnis
+  mksp = prof[xmax-5:xmax+4]  &  maximum, 5, mksp, ergebnis
   xmax=ergebnis[3] + xmax-5.
 endif
 ;####################################################################################
