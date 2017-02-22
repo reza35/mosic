@@ -48,7 +48,6 @@ if (n_elements(plt) eq 0) then plt = 0
 if n_elements(winindex) eq 0 then windex  = 20 else windex = winindex
 
 prof = iline
-pprof = smooth(prof, 19)
 x = abs(deriv(prof))           
 
 band1 = fltarr(3)
