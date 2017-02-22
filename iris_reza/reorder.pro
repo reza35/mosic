@@ -14,6 +14,7 @@ pro reorder, inpath
 ;                 matter how big it is
 ; Sep 10, 2016 : bug fix
 ; Oct 05, 2016 : improved documentation
+; Feb 22, 2017 : also works for fixed-slit data  
 ;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
@@ -36,18 +37,35 @@ file = inpath+files_d.files[0]
 print, file
 
 hed = headfits(file)
-n3 = fxpar(hed, 'naxis3')
-n1 = fxpar(hed, 'naxis1')
-n2 = fxpar(hed, 'naxis2')
-print, n1, n2, n3
-a = fltarr(n3, n2, n1)
+b = readfits(file, nslice=0, /silent)
+tay_b = size(b)
+if (tay_b[1] gt 1) then begin
+   n1 = fxpar(hed, 'naxis1')
+   n2 = fxpar(hed, 'naxis2')
+   n3 = fxpar(hed, 'naxis3')
+   print, n1, n2, n3
+   a = fltarr(n3, n2, n1)
 
-for i=0,n3-1 do begin
-     b = readfits(file, nslice=i, /silent)
-     sb = where(~finite(b), count)  &  if (count gt 0) then b(sb) = -1.  ; for individual 2D rasters
-     a[i,*,*] = transpose(b)
-     print, n3-i-1, string(13b), format='(I,a1,$)'
-endfor
+   for i=0,n3-1 do begin
+      b = readfits(file, nslice=i, /silent)
+      sb = where(~finite(b), count)  &  if (count gt 0) then b(sb) = -1. ; for individual 2D rasters
+      a[i,*,*] = transpose(reform(b))
+      print, n3-i-1, string(13b), format='(I,a1,$)'
+   endfor
+endif else begin
+   n1 = fxpar(hed, 'naxis4')
+   n2 = fxpar(hed, 'naxis2')
+   n3 = fxpar(hed, 'naxis3')
+   print, n1, n2, n3
+   a = fltarr(n3, n2, n1)
+
+   for i=0,n1-1 do begin
+      b = readfits(file, nslice=i, /silent)
+      sb = where(~finite(b), count)  &  if (count gt 0) then b(sb) = -1. ; for individual 2D rasters
+      a[*,*, i] = transpose(reform(b))
+      print, n1-i-1, string(13b), format='(I,a1,$)'
+   endfor
+endelse   
 
 writefits, file, a, hed
 
