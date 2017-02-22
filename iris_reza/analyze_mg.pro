@@ -1062,7 +1062,7 @@ if (abs(xmax[0] - xmaxs[0,0]) gt 1.) then begin
    xmaxs[0,0] = xmax[0] 
    xmaxs[0,1] = prof(xmax[0])
 endif
-if (xmax[0] lt xmin[0])and(cmax eq 1) then begin 
+if (xmax[0] lt xmin[0])and(cmax eq 1)and(cmin ge 2) then begin 
         saba = max(prof[xmin[0]:xmin[1]], posmax)
         saba = reform(prof[xmin[0]:xmin[1]])
         lpff, saba, pos1
