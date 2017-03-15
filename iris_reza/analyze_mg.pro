@@ -1148,6 +1148,9 @@ if (type eq 3) then begin
 
 endif
 if (type eq 5)or(type eq 4) then begin
+   if (xmax gt (n_elements(prof) - 3)) then begin
+      temp = max(prof, xmax)
+  endif   
   if (prof[xmax-1] gt prof[xmax]) then xmax-=1
   mksp = prof[xmax-5:xmax+4]  &  maximum, 5, mksp, ergebnis
   xmax=ergebnis[3] + xmax-5.
