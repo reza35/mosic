@@ -1,4 +1,4 @@
-pro analyze_iris, filepath, do_mg=do_mg, do_gauss=do_gauss, do_cii=do_cii, do_si=do_si,do_o1=do_o1,do_cl=do_cl,do_cont=do_cont, do_h=do_h, zfac=zfac, fast=fast, do_1394=do_1394, do_plot=do_plot, do_quiet=do_quiet, do_improve=do_improve
+pro analyze_iris, filepath, do_mg=do_mg, do_gauss=do_gauss, do_cii=do_cii, do_si=do_si,do_o1=do_o1,do_cl=do_cl,do_cont=do_cont, do_h=do_h, zfac=zfac, fast=fast, do_1394=do_1394, do_plot=do_plot, do_quiet=do_quiet
 
 ;+
 ;===============================================================
@@ -122,7 +122,6 @@ endif
 
 if (n_elements(do_mg) eq 0)  then do_mg=0  else do_mg=1
 if (n_elements(do_gauss) eq 0)  then do_gauss=0  else do_gauss=1  ; perform a Gaussian fit for Mg II h/k
-if (n_elements(do_improve) eq 0)  then do_improve=0  else do_improve=1  
 if (n_elements(do_h) eq 0)  then do_h=0  else if (do_mg eq 1) then do_h=1
 
 if (n_elements(do_cii) eq 0) then do_cii=0 else do_cii=1
@@ -1431,12 +1430,12 @@ master = [master_k1v1, master_k1v2, master_k1r1, master_k1r2]
 if (num_files eq 1) then vv = avprof[Mg_range[0]:Mg_range[1]] else vv = avprof
 wing = mean(vv[60:64])
 
-ergm =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, /plt,  /do_gauss, /do_improve) ;
+ergm =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, /plt,  do_gauss=1) ;
 k_fit_gauss = fltarr(nx, ny, n_elements(ergm.sfit), 4)
 
 if (do_h eq 1) then begin
     master = [master_h1v1, master_h1v2, master_h1r1, master_h1r2]
-    ergh =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, /plt,  /do_H_line,  /do_gauss, /do_improve) ;
+    ergh =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, /plt,  /do_H_line,  do_gauss=1) ;
     h_fit_gauss = fltarr(nx, ny, n_elements(ergh.sfit),  4)
 endif
 
@@ -1468,7 +1467,7 @@ for i=0, nx-1 do begin
         k_check = tmp[master_k1v1:master_k1r2]
         e = check_input_profile(wing, master_k3, master_k1v1, master_k1r2, tmp)
         if (e eq 0) then begin
-           erg =  analyze_mg(tmp, wing, ca_ilo, ca_ihi, master, dispersion_nuv, plt=do_plot, /do_gauss,/do_improve)
+           erg =  analyze_mg(tmp, wing, ca_ilo, ca_ihi, master, dispersion_nuv, plt=do_plot, do_gauss=do_gauss)
 
               fe_par[i, j, *]   = erg.velpos
               fe_int[i, j, *]   = erg.fe_int
@@ -1500,7 +1499,7 @@ for i=0, nx-1 do begin
                 if (median(h_check) gt 2.)and(max(h_check) gt 2.)and(e eq 0) then begin
                 tmp = reform(v[*, j + z0]) & tmp = gauss_smooth(tmp, 1., /edge_truncate)
                 master = [master_h1v1, master_h1v2, master_h1r1, master_h1r2]
-                erg =  analyze_mg(tmp, wing, ca_ilo, ca_ihi, master, dispersion_nuv, plt=do_plot, /do_H_line, /do_gauss,/do_improve)
+                erg =  analyze_mg(tmp, wing, ca_ilo, ca_ihi, master, dispersion_nuv, plt=do_plot, /do_H_line, do_gauss=do_gauss)
                 fe_par[i, j, *] = erg.velpos
                 fe_int[i, j, *] = erg.fe_int
 

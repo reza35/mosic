@@ -52,7 +52,7 @@ end
 
 
 function analyze_mg, line_profile, konti, ca_ilo, ca_ihi, master, $
-                     disper, plt=plt, do_H_line=do_H_line, do_gauss=do_gauss, do_improve=do_improve
+                     disper, plt=plt, do_H_line=do_H_line, do_gauss=do_gauss
 ;+
 ;===============================================================
 ; function : analyze_mg.pro
@@ -177,8 +177,8 @@ iline2 = reform(line_profile)
 q=where(~finite(iline), count) &  if (count ge 1) then stop
 
 if n_elements(do_H_line) eq 0 then do_H_line = 0 else do_H_line = 1
-if n_elements(do_gauss) eq 0 then do_gauss = 0 else do_gauss = 1
-if n_elements(do_improve) eq 0 then do_improve = 0 else do_improve = 1
+if (do_gauss ne 0) then do_gauss = 1 
+do_improve = 1
 
 iline = iline / konti
 prof = iline 
@@ -1365,7 +1365,7 @@ endif
 
 if (do_gauss eq 1) then begin
 ;###############################################################################################
-; perform  a single/double/triple Gassian fit to the line core
+; perform  a single/double/triple Gaussian fit to the line core
 ; so far works only for disp = 2.5 and 5 mA
 ;###############################################################################################
   if (np gt  40) then  new_offset = line_offset + 6. else new_offset = line_offset + 3.
