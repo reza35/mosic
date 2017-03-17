@@ -43,7 +43,7 @@ A better approach is to call it like in the following order:
 reorder, 'my_data_path'	 	     	     (this step should be executed first !)
 analyze_iris, 'my_data_path', /do_cont       (this step should be executed second !)
 
-analyze_iris, 'my_data_path', /do_mg, /do_h, /do_gauss, /do_improve
+analyze_iris, 'my_data_path', /do_mg, /do_h, /do_gauss
 
 analyze_iris, 'my_data_path', /do_o1		triple Gaussian fit to the O I + two C I lines
 	      		      			/do_o1 should be executed before any other FUV channel
@@ -181,7 +181,7 @@ activate mosic in your idl PATH
 				 /do_quiet blocks all visualizations. 
 				 
 				 
- analyze_iris, '/full/path/to/level3_data/', /do_mg, /do_h, /do_gauss, /do_improve, /do_quiet
+ analyze_iris, '/full/path/to/level3_data/', /do_mg, /do_h, /do_gauss, /do_quiet
  
  	       			 to analyze the Mg II h/k lines.
 				 it performs all the calculations and returns a structured variable to the main program. 
