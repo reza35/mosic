@@ -28,9 +28,6 @@ x= reform(k_dpar[*, *, 7]) & q=where(x ne 0.) & plot_histogram, x(q), xrange=[0,
 x= reform(k_tpar[*, *, 8]) & q=where(x ne 0.) & plot_histogram, x(q), xrange=[0, s], oplott=250
 loadct, 0,/silent
  
-data=readfits('/data/obs/iris/spots/spot_20150329a/iris_l3_20150329_135941_3800013397_t000_all_im.fits')
-data=reform(data[*,*,2860:*,0])
-
 k_fit_gauss = k_fit_gauss[*,*,0:47,*]
 tay=size(k_fit_gauss)
 window, 0, xs=tay[1]*3, ys=tay[2], tit='Continuum, Amplitude'
@@ -88,7 +85,6 @@ if (starter eq 1) then begin
      oplot, k_fit_gauss[px, py, *, 2], color=175,thick=2.5, linestyle=2
      oplot, k_fit_gauss[px, py, *, 3], color=245,thick=2.5
      loadct,0,/silent
-     plot, x2, smooth(gauss_smooth(reform(data[px, py+59, 271:320]), 1.2,/edge_truncate),3),/xst
      print, '------------------------------------------------------------------------'
      wset, 0
   endif
@@ -100,7 +96,7 @@ if (starter eq 1) then begin
      x = (findgen(tay[3]) - tay[3]/2.)* dispersion_nuv
      print, px, py, k_spar[px,py,4], k_dpar[px,py,7], k_tpar[px,py,8], k_tpar[px, py,2], k_tpar[px, py,5]
      plot, x, k_fit_gauss[px, py, *, 0],/xsty,xthick=2,ythick=2,thick=2,chars=1.3,xtit='!7Dk!3 [pm]', $
-           ytit='intensity [DN]',charthick=2, yr=[0,6d3]
+           ytit='intensity [DN]',charthick=2, yr=[0, max(k_fit_gauss[px,py,*, 0])*1.1]
      ee = ir_error(reform(k_fit_gauss[px, py, *, 0]), /nuv, /dark)
      errplot, x, k_fit_gauss[px, py, *, 0] - ee, k_fit_gauss[px, py, *, 0] + ee, thick=2
      loadct,40,/silent  
