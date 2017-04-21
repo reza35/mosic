@@ -140,7 +140,7 @@ c2 = max(pyn[(posmax+10/dfac):(posmax+40/dfac)<(np-1)])
 ;--------------------------------------------
 ;-- initial guess, single Gaussain fit
 ;--------------------------------------------
-fit0 = [kont, tmax,  posmax , 4.5/dfac + randomn(seed)*.1] * 1.0d
+fit0 = [kont, tmax,  posmax , 4.5/dfac + randomn(seed)*.5] * 1.0d
 
 ppy = py
 
@@ -159,7 +159,7 @@ if (abs(ergs.p1 - posmax) gt 8.) then is_bad = 1.  ; we know that O I cannot hav
 ;------------------
 if (ergs.i1 gt 1d2)or(ergs.w1 gt 9.0/dfac)or(is_bad eq 1.)or(n_elements(fitsg) lt np)or(chisq1 gt 10.0) then begin ; the first check
 ;print, 'aaaaaaaaaaaaaaaaa'
-   fit0 = [kont, tmax, posmax, av_fit[3]+randomn(seed)*0.1]
+   fit0 = [kont, tmax, posmax, av_fit[3]+randomn(seed)*0.5]
      range0=[.02,  0.05, 0.04,  0.2] 
      ergs = my_sgf(px[bbc], ppy[bbc], ee[bbc], fit0, range0, dlambda[0], bbc, /double)
      fitsg = rgauss(px, [ergs.b, ergs.i1, ergs.p1,  ergs.w1])
@@ -236,7 +236,7 @@ if (max(fitsg)/rms gt 2.) then begin ;   6
   if (abs(ergs.p1 - posmax) gt 8.) then ergs.p1 = posmax
 
   fit0 = [ergs.i1>1. < o_max, ergs.p1, ergs.w1 > .2]
-  fit1 = [max(fitsg)*0.5d> 1. < 19., ergs.w1*1.15d + randomn(seed)*.05, max(fitsg)*0.25d> 0.5 <17.]
+  fit1 = [max(fitsg)*0.5d> 1. < 19., ergs.w1*1.15d + randomn(seed)*.2, max(fitsg)*0.25d> 0.5 <17.]
 
   range0=[0.1, 0.05, 0.05] 
   range1=[0.95, 0.5, 0.95]
@@ -257,18 +257,18 @@ if (max(fitsg)/rms gt 2.) then begin ;   6
      py = gauss_smooth(py0, 1.2, /edge_truncate)
      pyn = py - ergs.b
      
-     fit0 = [ergs.i1>2. < o_max, ergs.p1, 5.0/dfac+randomn(seed)*0.3]
+     fit0 = [ergs.i1>2. < o_max, ergs.p1, 5.0/dfac+randomn(seed)*0.5]
      fit1 = [max(fitsg)*0.8d > 1.< 90., 7.d/dfac+randomn(seed)*0.3, max(fitsg)*0.2d > 0.5 < 60.]
 
      if (c1 gt 15)and(c2 gt 50.) then begin
         o_max = 180.0
-        fit0 = [ergs.i1>30. < o_max, ergs.p1, 5.0/dfac+randomn(seed)*0.3]
-        fit1 = [max(fitsg)*0.8d > 1.< 180., 7.d/dfac+randomn(seed)*0.3, max(fitsg)*0.2d > 0.5 < 120.]
+        fit0 = [ergs.i1>30. < o_max, ergs.p1, 5.0/dfac+randomn(seed)*0.5]
+        fit1 = [max(fitsg)*0.8d > 1.< 180., 7.d/dfac+randomn(seed)*0.5, max(fitsg)*0.2d > 0.5 < 120.]
      endif   
      if (c1 gt 100)and(c2 gt 200.) then begin
         o_max = 540.0
-        fit0 = [ergs.i1>100. < o_max, ergs.p1, 5.0/dfac+randomn(seed)*0.3]
-        fit1 = [max(fitsg)*0.8d > 1.< 540., 7.d/dfac+randomn(seed)*0.3, max(fitsg)*0.2d > 0.5 < 360.]
+        fit0 = [ergs.i1>100. < o_max, ergs.p1, 5.0/dfac+randomn(seed)*0.5]
+        fit1 = [max(fitsg)*0.8d > 1.< 540., 7.d/dfac+randomn(seed)*0.5, max(fitsg)*0.2d > 0.5 < 360.]
      endif   
      
      range0 = [0.2, 0.2, 0.3] 
