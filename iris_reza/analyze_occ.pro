@@ -48,7 +48,8 @@ function analyze_occ, iline, ca_ilo, ca_ihi, pos_line, disper, plt
 ; May 12, 2016 : chi-square statistic improved
 ; May 24, 2016 : new loop to double check failed fits / CR profiles
 ; Oct 03, 2016 : minor bug fix for spectral range
-; Nov 21, 2016 : random initialization of the single Gaussian fits
+; Nov 21, 2016 : random initialization of the single Gaussian fit
+; Apr 21, 2017 : random initialization of the triple Gaussian fits
 ;
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
@@ -158,7 +159,6 @@ if (abs(ergs.p1 - posmax) gt 8.) then is_bad = 1.  ; we know that O I cannot hav
 
 ;------------------
 if (ergs.i1 gt 1d2)or(ergs.w1 gt 9.0/dfac)or(is_bad eq 1.)or(n_elements(fitsg) lt np)or(chisq1 gt 10.0) then begin ; the first check
-;print, 'aaaaaaaaaaaaaaaaa'
    fit0 = [kont, tmax, posmax, av_fit[3]+randomn(seed)*0.5]
      range0=[.02,  0.05, 0.04,  0.2] 
      ergs = my_sgf(px[bbc], ppy[bbc], ee[bbc], fit0, range0, dlambda[0], bbc, /double)
@@ -168,7 +168,6 @@ if (ergs.i1 gt 1d2)or(ergs.w1 gt 9.0/dfac)or(is_bad eq 1.)or(n_elements(fitsg) l
 endif   
 ;------------------
 if (ergs.i1 gt 1d2)or(ergs.w1 gt 9.0/dfac)or(is_bad eq 1.)or(n_elements(fitsg) lt np)or(chisq1 gt 10.) then begin ; the second check
-   ;print, '--------'
      fit0[3] = randomu(seed)*4.3/dfac + 1.
      glx = max(ppy[(posmax-8):(posmax+8)<(np-1)], p_ii) & p_ii += (posmax-8)
      fit0[1:2] = [glx<100., p_ii+1.]
@@ -180,7 +179,6 @@ if (ergs.i1 gt 1d2)or(ergs.w1 gt 9.0/dfac)or(is_bad eq 1.)or(n_elements(fitsg) l
 endif  
 ;------------------
 if (is_bad eq 1.)or(n_elements(fitsg) lt np)or(chisq1 gt 50.) then begin ; the third check
-   ;print, ',,,,,,,,,,,,,,,,,,,,,,,', chisq1
      if (max(ppy) gt 100.) then ppy(where(ppy gt 100)) = 0.
      ppy = median(ppy, 7)
      fit0[3] = randomu(seed)*5.6/dfac + 1.
@@ -235,8 +233,8 @@ if (max(fitsg)/rms gt 2.) then begin ;   6
   if (ergs.i1 gt tmax*1.1)or(ergs.i1 lt tmax*0.9) then ergs.i1 = tmax
   if (abs(ergs.p1 - posmax) gt 8.) then ergs.p1 = posmax
 
-  fit0 = [ergs.i1>1. < o_max, ergs.p1, ergs.w1 > .2]
-  fit1 = [max(fitsg)*0.5d> 1. < 19., ergs.w1*1.15d + randomn(seed)*.2, max(fitsg)*0.25d> 0.5 <17.]
+  fit0 = [(ergs.i1 + randomn(seed))>1. < o_max, ergs.p1, ergs.w1 > .2]
+  fit1 = [(max(fitsg)*0.5d + randomn(seed))> 1. < 19., ergs.w1*1.15d + randomn(seed)*.2, (max(fitsg)*0.25d + randomn(seed)*.5 )> 0.5 <17.]
 
   range0=[0.1, 0.05, 0.05] 
   range1=[0.95, 0.5, 0.95]
@@ -257,18 +255,18 @@ if (max(fitsg)/rms gt 2.) then begin ;   6
      py = gauss_smooth(py0, 1.2, /edge_truncate)
      pyn = py - ergs.b
      
-     fit0 = [ergs.i1>2. < o_max, ergs.p1, 5.0/dfac+randomn(seed)*0.5]
-     fit1 = [max(fitsg)*0.8d > 1.< 90., 7.d/dfac+randomn(seed)*0.3, max(fitsg)*0.2d > 0.5 < 60.]
+     fit0 = [(ergs.i1 + randomn(seed))>2. < o_max, ergs.p1, 5.0/dfac+randomn(seed)*0.5]
+     fit1 = [(max(fitsg)*0.8d + randomn(seed)) > 1.< 90., 7.d/dfac+randomn(seed)*0.3, (max(fitsg)*0.2d + randomn(seed)*.5 ) > 0.5 < 60.]
 
      if (c1 gt 15)and(c2 gt 50.) then begin
         o_max = 180.0
         fit0 = [ergs.i1>30. < o_max, ergs.p1, 5.0/dfac+randomn(seed)*0.5]
-        fit1 = [max(fitsg)*0.8d > 1.< 180., 7.d/dfac+randomn(seed)*0.5, max(fitsg)*0.2d > 0.5 < 120.]
+        fit1 = [max(fitsg)*0.8d > 1.< 180., 7.d/dfac+randomn(seed)*0.5, (max(fitsg)*0.2d + randomn(seed)*.5 ) > 0.5 < 120.]
      endif   
      if (c1 gt 100)and(c2 gt 200.) then begin
         o_max = 540.0
         fit0 = [ergs.i1>100. < o_max, ergs.p1, 5.0/dfac+randomn(seed)*0.5]
-        fit1 = [max(fitsg)*0.8d > 1.< 540., 7.d/dfac+randomn(seed)*0.5, max(fitsg)*0.2d > 0.5 < 360.]
+        fit1 = [max(fitsg)*0.8d > 1.< 540., 7.d/dfac+randomn(seed)*0.5, (max(fitsg)*0.2d + randomn(seed)*.5 ) > 0.5 < 360.]
      endif   
      
      range0 = [0.2, 0.2, 0.3] 
@@ -289,7 +287,7 @@ if (max(fitsg)/rms gt 2.) then begin ;   6
      pyn = py - ergs.b
      
      fit0 = [ergs.i1>2. < o_max, ergs.p1, 5.0/dfac + randomn(seed)*1.5]
-     fit1 = [max(fitsg)*0.1d > 1.< 60., 6.0/dfac + randomn(seed)*0.8, max(fitsg)*0.05d > 0.5 < 40.]
+     fit1 = [(max(fitsg)*0.1d + randomn(seed)*.1 ) > 1.< 60., 6.0/dfac + randomn(seed)*0.8, (max(fitsg)*0.05d + randomn(seed)*.1 ) > 0.5 < 40.]
      
      range0 = [0.01, 0.05, 0.05] 
      range1 = [0.3,  0.3, 0.3]
@@ -299,11 +297,8 @@ if (max(fitsg)/rms gt 2.) then begin ;   6
      chisq4 = (1.0d/(n_elements(bbc) - 6.0d)) * total(((pyn[bbc] - fitqg[bbc])/err_ave[bbc])^2)
      fitqg += ergs.b
      qpar1=[ergq.p1, ergq.i1, ergq.w1, ergq.i2, ergq.w2, ergq.i3, chisq4, reform(ergq.sigma)]
-     ;oplot, px, fitqg - ergs.b, color=250 & loadct,0,/silent
-     ;print, '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
   endif
   endif
-;print, chisq1, chisq4
 ;-------------------------------------
 ;-- plot lines, positions of peaks
 ;-------------------------------------
