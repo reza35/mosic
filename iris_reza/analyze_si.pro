@@ -350,11 +350,11 @@ if (max(fitdg)/rms gt 5.) then begin ; if there is a little bit of signal
 ;-- initial guess for each component
 ;-- using results of the first penta Gaussian fit
 ;---------------------------------------------------------------------------------
-  o_iv_pos = ergq.p1 - 126.32 / dfac
+  o_iv_pos = ergq.p1 - 126.32 / dfac + randomn(seed)* 0.1
 
   o_iv_w = ergq.w1 *1.22 +randomn(seed)*0.3
-  fit0 = [ergq.i1, ergq.p1, ergq.w1+randomn(seed)*0.3] * 1.0d
-  fit1 = [ergq.i2>2., o_iv_pos, o_iv_w, ergq.i3>1., ergq.i4>0.2, ergq.i5 > 0.2, ergq.i2 * 0.3] * 1.0d ; initial guess
+  fit0 = [ergq.i1 + randomn(seed)* 0.3, ergq.p1, ergq.w1+randomn(seed)*0.3] * 1.0d
+  fit1 = [(ergq.i2 + randomn(seed)* 0.1)>2., o_iv_pos, o_iv_w, (ergq.i3 + randomn(seed)* 0.1)>1., ergq.i4>0.2, ergq.i5 > 0.2, ergq.i2 * 0.3 + randomn(seed) * 0.1] * 1.0d ; initial guess
 
   range0=[0.1, 0.1, 0.1] * 1.0d
   range1=[0.8, 0.1, 0.3, 0.5, 0.5, 0.5, 0.9] * 1.0d
@@ -389,7 +389,7 @@ if (max(fitdg)/rms gt 5.) then begin ; if there is a little bit of signal
 ;-- using results of the second penta Gaussian fit
 ;---------------------------------------------------------------------------------
   fit0 = [dpar1[2], dpar1[1], dpar1[3]>.2+randomn(seed)*0.3, dpar1[5]>2., dpar1[4], dpar1[6]>.2+randomn(seed)*0.3] * 1.0d ; Si IV double Gaussian
-  fit1 = [ergz.i2, ergz.p2, ergz.w2>.2+randomn(seed)*0.3, ergz.i3>1., ergz.i4>0.2, ergz.i5>0.2, ergz.i6>0.1]* 1.0d
+  fit1 = [(ergz.i2+ randomn(seed)* 0.1), ergz.p2, ergz.w2>.2+randomn(seed)*0.3, (ergz.i3+ randomn(seed)* 0.1)>1., (ergz.i4+ randomn(seed)* 0.1)>0.2, (ergz.i5+ randomn(seed)* 0.1)>0.2, (ergz.i6+ randomn(seed)* 0.1)>0.1]* 1.0d
   range0=[0.1, 0.1, 0.1, 0.1, 0.1, 0.1] * 1.0d
   range1=[0.1, 0.1, 0.5, 0.5, 0.5, 0.5, 0.5] * 1.0d
 
@@ -400,7 +400,7 @@ if (max(fitdg)/rms gt 5.) then begin ; if there is a little bit of signal
   chisf4 = (1.0d/(n_elements(bbc) - 13.0d)) * total(((pyn[bbc] - fitfg[bbc])/err_ave[bbc])^2)
   fitfg += dpar1[0]
 
-  if (ergf.w1/disper gt 25.)or(ergf.w1/disper lt 0.5)or(n_elements(fitfg) lt np)or(chisf4 gt 10.) then begin ; something is went wrong
+  if (ergf.w1/disper gt 25.)or(ergf.w1/disper lt 0.5)or(n_elements(fitfg) lt np)or(chisf4 gt 10.) then begin ; something went wrong
      range1=[0.1, 0.1, 0.3, 0.2, 0.2, 0.2, 0.2] * 1.0d
      ergf = my_hgf(px[bbc], pyn[bbc], ee[bbc], fit0, fit1, range0, range1, dlambda[0], bbc, /double)
      fitfg = hexagauss(px, [ergf.i1, ergf.p1, ergf.w1, ergf.i2, ergf.p2, ergf.w2, ergf.i3, ergf.p3, ergf.w3, ergf.i4, ergf.i5, ergf.i6,ergf.i7])
