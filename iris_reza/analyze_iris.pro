@@ -412,15 +412,15 @@ tvsclm, fe[*,*,1] > (s-1.) < (s+1.), xp=1*nx/zfac, yp=0, zm=zfac, cb=99
 tvsclm, cont,      xp=2*nx/zfac, yp=0, zm=zfac
 wait, 2.
 ;stop
-s = percentiles(kont, value=[0.6, .89, .99])
+s = percentiles(kont, value=[0.6, .92, .99])
 q = where((kont gt s[1])and(kont lt s[2]))
 i_cont = good_mean(cont(q))
 cont /= i_cont
-if (max(cont) gt 2.)or(max(cont lt 0.9)) then begin
+if (max(cont) gt 10.)or(max(cont lt 0.9)) then begin
    print, 'consider renormalization of the continuum map'
    ;stop
 endif   
-cont = cont < 2.0 > 0.
+cont = cont < 10.0 > 0.
 ;-------------------------------------
 ;--  280 nm continuum properties
 ;-------------------------------------
