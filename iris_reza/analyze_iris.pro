@@ -41,6 +41,8 @@ pro analyze_iris, filepath, do_mg=do_mg, do_gauss=do_gauss, do_cii=do_cii, do_si
 ; Jun 01, 2016 : dummy O I velocity gradient, as sometimes this channel is missing in the data
 ;
 ; Jan 27, 2017 : keep 280 nm continuum intensity in DN units
+;
+; Aug 21, 2017 : bug fix for the dummy orbital velocity.  
 ;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
