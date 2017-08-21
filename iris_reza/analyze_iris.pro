@@ -504,7 +504,7 @@ endfor
 ; create a dummy file in case O I data is not present
 ; it will be overwritten, in case one runs the O I data reduction 
 ;-----------------------------------------------------------------
-euv_temporal_gradient = yfit - yfit
+euv_temporal_gradient = temporal_gradient - temporal_gradient
 save, filename=outfile_fuv_temp, euv_temporal_gradient
 
 x = reform(fe[*,*,0])  &  if (count1 ge 1) then x(q1)= 0.  &   fe[*,*,0] = x
