@@ -415,7 +415,7 @@ endif
 ;--  band parameters
 ;----------------------------
 band1[0] = delta ; total(prof[line_core-4:line_core+4])* disper   ; H3 similar to band intensity in Ca II and Mg II
-band1[1] = total(prof[line_core-12:line_core-3])* disper  ; H2v similar to band intensity in Ca II and Mg II
+band1[1] = total(prof[(line_core-12)>0:line_core-3])* disper  ; H2v similar to band intensity in Ca II and Mg II
 band1[2] = total(prof[line_core+5:((line_core+14)< (np-1))])* disper  ; H2r  similar to band intensity in Ca II and Mg II
 
 ;-------------------------------------
