@@ -17,6 +17,7 @@ function analyze_c2, iline, ca_ilo, ca_ihi, pos_line, disper, plt, fast
 ; Jun 04, 2016 : dispersion of 5 mA/px was added
 ; Nov 21, 2016 : random initialization of the single Gaussian fits
 ; Dec 19, 2016 : improved random initialization
+; Aug 22, 2017 : bug fix for limb data
 ;
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
@@ -212,7 +213,9 @@ endif
   ;------------------------------------------------------------------------------
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
-  if (chisq2 gt 1.)or(chisq2 lt 0.1)or(ergd.i1/ergd.i2 gt 1.5)or(ergd.i1/ergd.i2 lt 0.9) then begin
+  bad_fit = 0
+  if (ergd.p1 lt 12.)or(ergd.p1 gt (np - 12.)) then bad_fit = 1
+  if (chisq2 gt 1.)or(chisq2 lt 0.1)or(ergd.i1/ergd.i2 gt 1.5)or(ergd.i1/ergd.i2 lt 0.9)or(bad_fit eq 1) then begin
         random_dg_cii_fit, 30, px, pyn, ee, err_ave, bcc, 0.2, spar1, ergd, dpar_new, fitdg_new
         if (dpar_new[5] lt chisq2) then begin
            chisq2 = dpar_new[5]
@@ -230,8 +233,9 @@ if (max(fitdg)/rms gt 4.) then begin
 ;--  a quad Guassian fit to both C II lines 
 ;--  = two Gaussians for each C II line
 ;---------------------------------------------------
-ee =  ir_error(py, /fuv, /dark)
-  
+
+  ee =  ir_error(py, /fuv, /dark)
+  if (dpar1[0] lt 12.)or(dpar1[0] gt (np - 12.)) then dpar1[0] = posmax
   v_peak = max(py[(dpar1[0] - 15/dfac):(dpar1[0] -3/dfac)], v_posmax) & v_posmax = (v_posmax + (dpar1[0] - 15/dfac))> (dpar1[0] - disper*3.) 
   r_peak = max(py[(dpar1[0] +3/dfac):(dpar1[0] + 15/dfac)], r_posmax) & r_posmax = (r_posmax + (dpar1[0] +3/dfac)) > (dpar1[0]) < (np -5.)
 
