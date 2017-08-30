@@ -178,7 +178,7 @@ q=where(~finite(iline), count) &  if (count ge 1) then stop
 
 if n_elements(do_H_line) eq 0 then do_H_line = 0 else do_H_line = 1
 if (do_gauss ne 0) then do_gauss = 1 
-do_improve = 1
+
 
 iline = iline / konti
 prof = iline 
@@ -1441,7 +1441,7 @@ if (do_gauss eq 1) then begin
   ;------------------------------------------------------------------------------
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
-  if (chisq1 gt 1.)and(do_improve eq 1) then begin
+  if (chisq1 gt 1.) then begin
      if (chisq1 le 800.) then begin
         random_sg_fit, 20, px, py, ppy, ee, err_ave, bbc, 0.6, ergs, spar_new, fitsg_new
         if (spar_new[4] lt chisq1) then begin
@@ -1550,7 +1550,7 @@ if (do_gauss eq 1) then begin
   ;------------------------------------------------------------------------------
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
-  if (chisq2 gt 1.)and(do_improve eq 1) then begin
+  if (chisq2 gt 1.) then begin
      if (chisq2 le 10.) then begin
         new_mg2_fit, 10, px, py, ppy, ee, err_ave, bbc, 0.3, ergd, dpar_new, fitdg_new
         if (dpar_new[6] lt chisq2) then begin
@@ -1747,7 +1747,7 @@ endif
   ;------------------------------------------------------------------------------
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
-  if (chisq4 gt 1.0)and(do_improve eq 1) then begin
+  if (chisq4 gt 1.0) then begin
      if (chisq4 le 5.) then begin
         new_mg3_fit, 10, px, py, ppy, ee, err_ave, bbc, 0.3, ergt, tpar_new, fittg_new
         if (tpar_new[9] lt chisq4) then begin
