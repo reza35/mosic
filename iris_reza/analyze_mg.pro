@@ -102,14 +102,13 @@ function analyze_mg, line_profile, konti, ca_ilo, ca_ihi, master, $
 ; spar[4] :   chi^2 ------- single Gaussian  fit
 ; spar[5:8] : sigma  
 ;
-; dpar[0] :   baseline = continuum 
-; dpar[1] :   line-core position -------1st Gaussian component
-; dpar[2] :   line-core amplitude ------- 1st Gaussian component
-; dpar[3] :   line-core width ------- 1st Gaussian component
-; dpar[4] :   line-core position ------- 2nd Gaussian component
-; dpar[5] :   line-core amplitude ------- 2nd Gaussian component
-; dpar[6] :   line-core width ------- 2nd Gaussian component
-; dpar[7] :   chi^2 ------- double Gaussian  fit
+; dpar[0] :   line-core position -------1st Gaussian component
+; dpar[1] :   line-core amplitude ------- 1st Gaussian component
+; dpar[2] :   line-core width ------- 1st Gaussian component
+; dpar[3] :   line-core position ------- 2nd Gaussian component
+; dpar[4] :   line-core amplitude ------- 2nd Gaussian component
+; dpar[5] :   line-core width ------- 2nd Gaussian component
+; dpar[6] :   chi^2 ------- double Gaussian  fit
 ; dpar[8:14] : sigma
   
 ; tpar[0] :   line-center position ------- H3
@@ -163,6 +162,7 @@ function analyze_mg, line_profile, konti, ca_ilo, ca_ihi, master, $
 ; Jul 01, 2016 : the Gaussian fit was improved. The distribution of
 ;                the reduced chi_square forms the expected curve around one.
 ; Nov 12, 2016 : random initialization of Gaussian fits was improved.
+; Sep 21, 2017 : improved k3 position in noisy data.
 ;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
@@ -178,7 +178,7 @@ q=where(~finite(iline), count) &  if (count ge 1) then stop
 
 if n_elements(do_H_line) eq 0 then do_H_line = 0 else do_H_line = 1
 if (do_gauss ne 0) then do_gauss = 1 
-
+do_improve = 1
 
 iline = iline / konti
 prof = iline 
@@ -1441,9 +1441,9 @@ if (do_gauss eq 1) then begin
   ;------------------------------------------------------------------------------
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
-  if (chisq1 gt 1.) then begin
+  if (chisq1 gt 1.)and(do_improve eq 1) then begin
      if (chisq1 le 800.) then begin
-        random_sg_fit, 20, px, py, ppy, ee, err_ave, bbc, 0.6, ergs, spar_new, fitsg_new
+        random_sg_fit, 50, px, py, ppy, ee, err_ave, bbc, 0.6, ergs, spar_new, fitsg_new
         if (spar_new[4] lt chisq1) then begin
            chisq1 = spar_new[4]
            fitsg = fitsg_new
@@ -1550,9 +1550,9 @@ if (do_gauss eq 1) then begin
   ;------------------------------------------------------------------------------
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
-  if (chisq2 gt 1.) then begin
+  if (chisq2 gt 1.)and(do_improve eq 1) then begin
      if (chisq2 le 10.) then begin
-        new_mg2_fit, 10, px, py, ppy, ee, err_ave, bbc, 0.3, ergd, dpar_new, fitdg_new
+        new_mg2_fit, 100, px, py, ppy, ee, err_ave, bbc, 0.3, ergd, dpar_new, fitdg_new
         if (dpar_new[6] lt chisq2) then begin
            chisq2 = dpar_new[6]
            fitdg = fitdg_new
@@ -1560,7 +1560,7 @@ if (do_gauss eq 1) then begin
         endif
      endif
      if (chisq2 gt 10.)and (chisq2 le 40.) then begin
-        new_mg2_fit, 10, px, py, ppy, ee, err_ave, bbc, 0.4, ergd, dpar_new, fitdg_new
+        new_mg2_fit, 100, px, py, ppy, ee, err_ave, bbc, 0.4, ergd, dpar_new, fitdg_new
         if (dpar_new[6] lt chisq2) then begin
            chisq2 = dpar_new[6]
            fitdg = fitdg_new
@@ -1568,7 +1568,7 @@ if (do_gauss eq 1) then begin
         endif
      endif
      if (chisq2 gt 40.) then begin
-        new_mg2_fit, 50, px, py, ppy, ee, err_ave, bbc, 0.9, ergd, dpar_new, fitdg_new
+        new_mg2_fit, 150, px, py, ppy, ee, err_ave, bbc, 0.9, ergd, dpar_new, fitdg_new
         if (dpar_new[6] lt chisq2) then begin
                chisq2 = dpar_new[6]
               fitdg = fitdg_new
@@ -1613,22 +1613,36 @@ if (do_gauss eq 1) then begin
   bad = 0.
   if ((ergt.i2/ergt.i3) gt 10.)or((ergt.i3/ergt.i2) gt 10.)or(w le 2./dfac) then bad = 1.
   if (ergt.w1 lt 22./disper)or(n_elements(fittg) lt np) then bad = 1.
-  if (chisq4 gt chisq2)or(chisq4 gt 10.) then bad = 1.
+  if (chisq4 gt chisq2)or(chisq4 gt 4.) then bad = 1.
   if (bad ne 0.) then begin
+     ;---------------------------------------------
+     syn_k3_aux = reform(fittg)
+     dg_x1 = ergd.p1 > 2.
+     dg_x2 = ergd.p2 < (np-2)
+     if (dg_x1 gt dg_x2) then begin  ; sort the two Gaussians if required
+        dg_x1 = ergd.p2 > 2.
+        dg_x2 = ergd.p1 < (np-2) 
+     endif
+     syn_k3_aux = reform(syn_k3_aux[dg_x1:dg_x2])
+     syn_aux = min(syn_k3_aux, pos_aux)
+     if (pos_aux eq 0) then pos_aux = n_elements(syn_k3_aux)/2.
+     k3w_init = pos_aux
+     k3_aux = syn_k3_aux[pos_aux] * 0.7
+     ;---------------------------------------------
      py0 = median(py,3)
      py = gauss_smooth(py0, 1.2, /edge_truncate)
-     fit0[0] = (ergd.p1 + ergd.p2) * 0.5d
+     fit0[0] = k3w_init ;(ergd.p1 + ergd.p2) * 0.5d
+     fit0[1] = k3_aux
      fit1[0] = max(py) * 0.75
      fit1[3] = max(py) * 0.85
-     range0 = [0.95, 0.3, 0.75] ; 0.5
-     range1 = [0.95, 0.4, 0.75, 0.95, .3, 0.75] ; 0.5
+     range0 = [0.6, 0.3, 0.75]
+     range1 = [0.95, 0.4, 0.75, 0.95, .3, 0.75]
      
      if (chisq2 lt chisq4) then begin  ;----- if double Gaussian was a better fit
-       fit0[1] = (ergd.p1 + ergd.p2) * 0.5
        fit1 = [ergd.i1, ergd.p1, ergd.w1*0.9, ergd.i2, ergd.p2, ergd.w1*0.9]
        range1 = fltarr(6) + 0.6
        range0[1] = 0.6
-    endif  
+     endif  
 
      
      if ((chisq1 lt chisq4)and(chisq1 lt chisq2))or(chisq1 lt 10.) then begin  ;----- if single Gaussian was the best fit
@@ -1747,9 +1761,9 @@ endif
   ;------------------------------------------------------------------------------
   ;  if the fit is not satisfactory, then use random initialization 
   ;------------------------------------------------------------------------------
-  if (chisq4 gt 1.0) then begin
+  if (chisq4 gt 1.0)and(do_improve eq 1) then begin
      if (chisq4 le 5.) then begin
-        new_mg3_fit, 10, px, py, ppy, ee, err_ave, bbc, 0.3, ergt, tpar_new, fittg_new
+        new_mg3_fit, 100, px, py, ppy, ee, err_ave, bbc, 0.3, ergt, tpar_new, fittg_new
         if (tpar_new[9] lt chisq4) then begin
            chisq4 = tpar_new[9]
            fittg = fittg_new
@@ -1757,7 +1771,7 @@ endif
         endif
      endif
      if (chisq4 gt 5.) then begin
-        new_mg3_fit, 10, px, py, ppy, ee, err_ave, bbc, 0.4, ergt, tpar_new, fittg_new
+        new_mg3_fit, 100, px, py, ppy, ee, err_ave, bbc, 0.4, ergt, tpar_new, fittg_new
         if (tpar_new[9] lt chisq4) then begin
            chisq4 = tpar_new[9]
            fittg = fittg_new
@@ -1765,7 +1779,7 @@ endif
         endif
      endif
      if (chisq4 gt 10.) then begin
-        new_mg3_fit, 50, px, py, ppy, ee, err_ave, bbc, 0.9, ergt, tpar_new, fittg_new
+        new_mg3_fit, 250, px, py, ppy, ee, err_ave, bbc, 0.9, ergt, tpar_new, fittg_new
         if (tpar_new[9] lt chisq4) then begin
               chisq4 = tpar_new[9]
               fittg = fittg_new
