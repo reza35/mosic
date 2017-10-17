@@ -236,6 +236,7 @@ vv = avprof
 print, '-----------------------------------'
 print, 'select rough 280 nm photospheric range'
 read_plot_click, 2, vv, vv, pos
+pos[1] = pos[1] < (n_elements(avprof)-1)
 vv = avprof[pos[0]:pos[1]]     &    s = pos[0]
 print, 'select exact photospheric range'
 read_plot_click, 2, vv, vv, pos
