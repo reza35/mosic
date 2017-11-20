@@ -44,6 +44,8 @@ pro analyze_iris, filepath, do_mg=do_mg, do_gauss=do_gauss, do_cii=do_cii, do_si
 ;
 ; Aug 21, 2017 : bug fix for the dummy orbital velocity.  
 ;  
+; Nov 20, 2017 : more control of the random steps.  
+;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
 ;-
@@ -1432,12 +1434,12 @@ master = [master_k1v1, master_k1v2, master_k1r1, master_k1r2]
 if (num_files eq 1) then vv = avprof[Mg_range[0]:Mg_range[1]] else vv = avprof
 wing = mean(vv[60:64])
 
-ergm =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, /plt,  do_gauss=1) ;
+ergm =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, 20, /plt, do_gauss=1) ;
 k_fit_gauss = fltarr(nx, ny, n_elements(ergm.sfit), 4)
 
 if (do_h eq 1) then begin
     master = [master_h1v1, master_h1v2, master_h1r1, master_h1r2]
-    ergh =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, /plt,  /do_H_line,  do_gauss=1) ;
+    ergh =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, 20, /plt, /do_H_line, do_gauss=1) ;
     h_fit_gauss = fltarr(nx, ny, n_elements(ergh.sfit),  4)
 endif
 
@@ -1562,7 +1564,7 @@ endfor
 ;  endif
  
 endfor
-
+save, filename=filepath+'em_lines.sav', em_lines
 ;-------------------------------------------------
 ;-- systematic velocity residuals
 ;-------------------------------------------------

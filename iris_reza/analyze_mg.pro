@@ -52,7 +52,7 @@ end
 
 
 function analyze_mg, line_profile, konti, ca_ilo, ca_ihi, master, $
-                     disper, plt=plt, do_H_line=do_H_line, do_gauss=do_gauss
+                     disper, zeta, plt=plt, do_H_line=do_H_line, do_gauss=do_gauss
 ;+
 ;===============================================================
 ; function : analyze_mg.pro
@@ -163,6 +163,7 @@ function analyze_mg, line_profile, konti, ca_ilo, ca_ihi, master, $
 ;                the reduced chi_square forms the expected curve around one.
 ; Nov 12, 2016 : random initialization of Gaussian fits was improved.
 ; Sep 21, 2017 : improved k3 position in noisy data.
+; Nov 20, 2017 : zeta controls the random processes.
 ;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
@@ -177,6 +178,7 @@ iline2 = reform(line_profile)
 q=where(~finite(iline), count) &  if (count ge 1) then stop
 
 if n_elements(do_H_line) eq 0 then do_H_line = 0 else do_H_line = 1
+if n_elements(zeta) eq 0 then zeta = 1
 if (do_gauss ne 0) then do_gauss = 1 
 do_improve = 1
 
@@ -1443,7 +1445,7 @@ if (do_gauss eq 1) then begin
   ;------------------------------------------------------------------------------
   if (chisq1 gt 1.)and(do_improve eq 1) then begin
      if (chisq1 le 800.) then begin
-        random_sg_fit, 50, px, py, ppy, ee, err_ave, bbc, 0.6, ergs, spar_new, fitsg_new
+        random_sg_fit, (50*zeta), px, py, ppy, ee, err_ave, bbc, 0.6, ergs, spar_new, fitsg_new
         if (spar_new[4] lt chisq1) then begin
            chisq1 = spar_new[4]
            fitsg = fitsg_new
@@ -1451,7 +1453,7 @@ if (do_gauss eq 1) then begin
         endif
      endif
      if (chisq1 gt 800.) then begin
-        random_sg_fit, 50, px, py, ppy, ee, err_ave, bbc, 0.9, ergs, spar_new, fitsg_new
+        random_sg_fit, (50*zeta), px, py, ppy, ee, err_ave, bbc, 0.9, ergs, spar_new, fitsg_new
         if (spar_new[4] lt chisq1) then begin
               chisq1 = spar_new[4]
               fitsg = fitsg_new
@@ -1552,7 +1554,7 @@ if (do_gauss eq 1) then begin
   ;------------------------------------------------------------------------------
   if (chisq2 gt 1.)and(do_improve eq 1) then begin
      if (chisq2 le 10.) then begin
-        new_mg2_fit, 100, px, py, ppy, ee, err_ave, bbc, 0.3, ergd, dpar_new, fitdg_new
+        new_mg2_fit, (100*zeta), px, py, ppy, ee, err_ave, bbc, 0.3, ergd, dpar_new, fitdg_new
         if (dpar_new[6] lt chisq2) then begin
            chisq2 = dpar_new[6]
            fitdg = fitdg_new
@@ -1560,7 +1562,7 @@ if (do_gauss eq 1) then begin
         endif
      endif
      if (chisq2 gt 10.)and (chisq2 le 40.) then begin
-        new_mg2_fit, 100, px, py, ppy, ee, err_ave, bbc, 0.4, ergd, dpar_new, fitdg_new
+        new_mg2_fit, (100*zeta), px, py, ppy, ee, err_ave, bbc, 0.4, ergd, dpar_new, fitdg_new
         if (dpar_new[6] lt chisq2) then begin
            chisq2 = dpar_new[6]
            fitdg = fitdg_new
@@ -1568,7 +1570,7 @@ if (do_gauss eq 1) then begin
         endif
      endif
      if (chisq2 gt 40.) then begin
-        new_mg2_fit, 150, px, py, ppy, ee, err_ave, bbc, 0.9, ergd, dpar_new, fitdg_new
+        new_mg2_fit, (150*zeta), px, py, ppy, ee, err_ave, bbc, 0.9, ergd, dpar_new, fitdg_new
         if (dpar_new[6] lt chisq2) then begin
                chisq2 = dpar_new[6]
               fitdg = fitdg_new
@@ -1620,7 +1622,7 @@ if (do_gauss eq 1) then begin
      dg_x1 = ergd.p1 > 2.
      dg_x2 = ergd.p2 < (np-2)
      if (dg_x1 gt dg_x2) then begin  ; sort the two Gaussians if required
-        dg_x1 = ergd.p2 > 2.
+        dg_x1 = ergd.p2 > 2. < (np/2)
         dg_x2 = ergd.p1 < (np-2) 
      endif
      syn_k3_aux = reform(syn_k3_aux[dg_x1:dg_x2])
@@ -1763,7 +1765,7 @@ endif
   ;------------------------------------------------------------------------------
   if (chisq4 gt 1.0)and(do_improve eq 1) then begin
      if (chisq4 le 5.) then begin
-        new_mg3_fit, 100, px, py, ppy, ee, err_ave, bbc, 0.3, ergt, tpar_new, fittg_new
+        new_mg3_fit, (100*zeta), px, py, ppy, ee, err_ave, bbc, 0.3, ergt, tpar_new, fittg_new
         if (tpar_new[9] lt chisq4) then begin
            chisq4 = tpar_new[9]
            fittg = fittg_new
@@ -1771,7 +1773,7 @@ endif
         endif
      endif
      if (chisq4 gt 5.) then begin
-        new_mg3_fit, 100, px, py, ppy, ee, err_ave, bbc, 0.4, ergt, tpar_new, fittg_new
+        new_mg3_fit, (100*zeta), px, py, ppy, ee, err_ave, bbc, 0.4, ergt, tpar_new, fittg_new
         if (tpar_new[9] lt chisq4) then begin
            chisq4 = tpar_new[9]
            fittg = fittg_new
@@ -1779,7 +1781,7 @@ endif
         endif
      endif
      if (chisq4 gt 10.) then begin
-        new_mg3_fit, 250, px, py, ppy, ee, err_ave, bbc, 0.9, ergt, tpar_new, fittg_new
+        new_mg3_fit, (250*zeta), px, py, ppy, ee, err_ave, bbc, 0.9, ergt, tpar_new, fittg_new
         if (tpar_new[9] lt chisq4) then begin
               chisq4 = tpar_new[9]
               fittg = fittg_new
