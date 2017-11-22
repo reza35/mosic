@@ -83,7 +83,7 @@ endif
 if n_elements(winindex) eq 0 then windex  = 20 else windex = winindex
 
 prof = iline
-pprof = gauss_smooth(prof, 2, /edge_truncate)
+pprof = gauss_smooth(prof, 1.5, /edge_truncate)
 x = abs(deriv(prof))           
 
 band1 = fltarr(3)
