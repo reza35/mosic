@@ -83,7 +83,7 @@ endif
 if n_elements(winindex) eq 0 then windex  = 20 else windex = winindex
 
 prof = iline
-pprof = gauss_smooth(prof, 2, /edge_truncate)
+pprof = gauss_smooth(prof, 1.5, /edge_truncate)
 x = abs(deriv(prof))           
 
 band1 = fltarr(3)
@@ -190,7 +190,7 @@ dpar1=[ergd.b, ergd.p1, ergd.i1, ergd.w1, ergd.p2, ergd.i2, ergd.w2, chisq2, ref
 ;--  band parameters
 ;-- similar to band intensity in Ca II and Mg II
 ;------------------------------------------------------
-if (abs(line_core - pos_line) gt 10.) then line_core = pos_line 
+if (abs(line_core - pos_line) gt 10./disper) then line_core = pos_line 
 band1[0] = total(prof[line_core-4:line_core+4])* disper   ; H3 
 band1[1] = total(prof[line_core-12:line_core-3])* disper  ; H2v 
 band1[2] = total(prof[line_core+5:((line_core+14)< (np-1))])* disper  ; H2r  
