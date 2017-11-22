@@ -192,8 +192,8 @@ dpar1=[ergd.b, ergd.p1, ergd.i1, ergd.w1, ergd.p2, ergd.i2, ergd.w2, chisq2, ref
 ;------------------------------------------------------
 if (abs(line_core - pos_line) gt 10./disper) then line_core = pos_line 
 band1[0] = total(prof[(line_core-4)>0:line_core+4])* disper   ; H3 
-band1[1] = total(prof[(line_core-12)>0:line_core-3])* disper  ; H2v 
-band1[2] = total(prof[line_core+5:((line_core+14)< (np-1))])* disper  ; H2r  
+band1[1] = total(prof[(line_core-12)>0:(line_core-3)>0])* disper  ; H2v 
+band1[2] = total(prof[((line_core+5)< (np-1)):((line_core+14)< (np-1))])* disper  ; H2r  
 
 ;-------------------------------------
 ;-- plot lines, positions of peaks
