@@ -44,7 +44,9 @@ pro analyze_iris, filepath, do_mg=do_mg, do_gauss=do_gauss, do_cii=do_cii, do_si
 ;
 ; Aug 21, 2017 : bug fix for the dummy orbital velocity.  
 ;  
-; Nov 20, 2017 : more control of the random steps.  
+; Nov 20, 2017 : more control of the random steps.
+;  
+; Nov 29, 2017 : limb flag  
 ;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
@@ -189,6 +191,7 @@ print, 'observed location in heliographic coordinate:   x0    y0   '
 x0 = fxpar(hed, 'XCEN')
 y0 = fxpar(hed, 'YCEN')
 print, x0, y0,format='(F8.1,F9.1,/)'
+if (abs(x0) gt 850.)or(abs(y0) gt 850.) then at_limb=1 else at_limb=0
 
 vtf = size(a)
 
@@ -661,14 +664,14 @@ ti_c_i1 = ti_max
 ;-------------------------------------------------------------
 o_i_vel =  reform(occ[*,*,1])
 q1 = where(o_i_vel eq 0., cz)         ; zero pixels
-for j=0, ny-1 do o_i_vel[*,j] = o_i_vel[*,j] - euv_temporal_gradient
+if (at_limb eq 0) then for j=0, ny-1 do o_i_vel[*,j] = o_i_vel[*,j] - euv_temporal_gradient
 o_i_vel -= ergm.spar1[1]
 if (cz ge 1) then o_i_vel(q1) = 0.
 o_i_vel = o_i_vel * dispersion_fuv * speed_of_light / 135559.8d + 1.000 ; km/s
 ;-----------------------------------------------------------------------------------
 o_i_vel2 =  reform(occ_q[*,*,0])
 q1 = where(o_i_vel2 eq 0., cz)         ; zero pixels
-for j=0, ny-1 do o_i_vel2[*,j] = o_i_vel2[*,j] - euv_temporal_gradient
+if (at_limb eq 0) then for j=0, ny-1 do o_i_vel2[*,j] = o_i_vel2[*,j] - euv_temporal_gradient
 o_i_vel2 -= ergm.spar1[1]
 if (cz ge 1) then o_i_vel2(q1) = 0.
 o_i_vel2 = o_i_vel2 * dispersion_fuv * speed_of_light / 135559.8d + 1.000 ; km/s
@@ -788,7 +791,7 @@ ti_cl = ti_max
 
 cl_i_vel =  reform(cl[*,*,1])
 q1 = where(cl_i_vel eq 0., cz)         ; zero pixels
-for j=0, ny-1 do cl_i_vel[*,j] = cl_i_vel[*,j] - euv_temporal_gradient
+if (at_limb eq 0) then for j=0, ny-1 do cl_i_vel[*,j] = cl_i_vel[*,j] - euv_temporal_gradient
 cl_i_vel -= ergm.spar[1]
 if (cz gt 0) then cl_i_vel(q1) = 0.
 cl_i_vel = cl_i_vel * dispersion_fuv * speed_of_light / 135165.7d + 1.
@@ -936,25 +939,6 @@ save, filename=outfile_si, fe, cont, si_iv2, si_iv2_v, si_iv2_q, si_iv2_z, si_iv
 ;-------------------------------------------------------------
 restore, outfile_fuv_temp
 
-if 0 then begin
-for j=0, ny-1 do si_iv1[*,j,1] = si_iv1[*,j,1] - euv_temporal_gradient
-for j=0, ny-1 do si_iv1_v[*,j,1] = si_iv1_v[*,j,1] - euv_temporal_gradient
-
-for j=0, ny-1 do si_iv2[*,j,1] = si_iv2[*,j,1] - euv_temporal_gradient     ; single-Gausain fit
-
-for j=0, ny-1 do si_iv2_v[*,j,1] = si_iv2_v[*,j,1] - euv_temporal_gradient ; 1st component
-for j=0, ny-1 do si_iv2_v[*,j,4] = si_iv2_v[*,j,4] - euv_temporal_gradient ; 2nd component
-
-for j=0, ny-1 do si_iv2_q[*,j,0] = si_iv2_q[*,j,0] - euv_temporal_gradient ; 1st penta-Gaussian fit, Si IV 1403
-
-for j=0, ny-1 do si_iv2_z[*,j,0] = si_iv2_z[*,j,0] - euv_temporal_gradient ; 2nd penta-Gaussian fit, Si IV 1403
-for j=0, ny-1 do si_iv2_z[*,j,3] = si_iv2_z[*,j,3] - euv_temporal_gradient ; 2nd penta-Gaussian fit, O IV 1401
-
-for j=0, ny-1 do si_iv2_f[*,j,0] = si_iv2_f[*,j,0] - euv_temporal_gradient ; hexa-Gaussian fit, Si IV 1403, 1st comp
-for j=0, ny-1 do si_iv2_f[*,j,3] = si_iv2_f[*,j,3] - euv_temporal_gradient ; hexa-Gaussian fit, Si IV 1403, 2nd comp
-for j=0, ny-1 do si_iv2_f[*,j,6] = si_iv2_f[*,j,6] - euv_temporal_gradient ; hexa-Gaussian fit, O IV 1401
-endif
-
 ;----------------------------------------------------
 ;-- calculation of non-thermal line width
 ;----------------------------------------------------
@@ -972,7 +956,7 @@ if (do_1394 eq 1) then begin
    ti_si_iv1 = ti_max
 ;----------------------------------------------------------------------------
    si_iv1_vel = reform(si_iv1[*,*,1])
-   for j=0, ny-1 do si_iv1_vel[*,j] = si_iv1_vel[*,j] - euv_temporal_gradient
+   if (at_limb eq 0) then for j=0, ny-1 do si_iv1_vel[*,j] = si_iv1_vel[*,j] - euv_temporal_gradient
    si_iv1_vel = reform(si_iv1_vel) < (master_si1 + del_si) > (master_si1 - del_si)
    si_iv1_vel -= master_si1
    si_iv1_vel = si_iv1_vel * dispersion_fuv * speed_of_light / 139378.0d + 6.500
@@ -1061,7 +1045,7 @@ if (do_si eq 1) then begin
 
 si_iv2_vel = reform(si_iv2[*,*,1])
 q1 = where(si_iv2_vel eq 0., cz) 
-for j=0, ny-1 do si_iv2_vel[*,j] = si_iv2_vel[*,j] - euv_temporal_gradient   ; ---
+if (at_limb eq 0) then for j=0, ny-1 do si_iv2_vel[*,j] = si_iv2_vel[*,j] - euv_temporal_gradient   ; ---
 si_iv2_vel = reform(si_iv2_vel) < (ergm.fpar1[0] + del_si) > (ergm.fpar1[0] - del_si)
 si_iv2_vel -= ergm.fpar1[0]
 si_iv2_vel = si_iv2_vel * dispersion_fuv * speed_of_light / 140276.9d + 4.80d
@@ -1069,7 +1053,7 @@ if (cz gt 0) then si_iv2_vel(q1) = 0.
 ;-------------------------------------------------------------------------------
 si_iv2q_vel = reform(si_iv2_q[*,*,0])
 q1 = where(si_iv2q_vel eq 0., cz) 
-for j=0, ny-1 do si_iv2q_vel[*,j] = si_iv2q_vel[*,j] - euv_temporal_gradient
+if (at_limb eq 0) then for j=0, ny-1 do si_iv2q_vel[*,j] = si_iv2q_vel[*,j] - euv_temporal_gradient
 si_iv2q_vel = reform(si_iv2q_vel) < (ergm.fpar1[0] + del_si) > (ergm.fpar1[0] - del_si)
 si_iv2q_vel -= ergm.qpar1[0]
 si_iv2q_vel = si_iv2q_vel * dispersion_fuv * speed_of_light / 140276.9d + 4.80d
@@ -1077,7 +1061,7 @@ if (cz gt 0) then si_iv2q_vel(q1) = 0.
 ;-------------------------------------------------------------------------------
 si_iv2f_vel = reform(si_iv2_f[*,*,0])
 q1 = where(si_iv2f_vel eq 0., cz) 
-for j=0, ny-1 do si_iv2f_vel[*,j] = si_iv2f_vel[*,j] - euv_temporal_gradient
+if (at_limb eq 0) then for j=0, ny-1 do si_iv2f_vel[*,j] = si_iv2f_vel[*,j] - euv_temporal_gradient
 si_iv2f_vel = reform(si_iv2f_vel) < (ergm.fpar1[0] + del_si) > (ergm.fpar1[0] - del_si)
 si_iv2f_vel -= ergm.fpar1[0]
 si_iv2f_vel = si_iv2f_vel * dispersion_fuv * speed_of_light / 140276.9d + 4.80d
@@ -1085,7 +1069,7 @@ if (cz gt 0) then si_iv2f_vel(q1) = 0.
 ;-------------------------------------------------------------------------------
 o_iv_vel = reform(si_iv2_f[*,*,6])
 q1 = where(o_iv_vel eq 0., cz) 
-for j=0, ny-1 do o_iv_vel[*,j] = o_iv_vel[*,j] - euv_temporal_gradient
+if (at_limb eq 0) then for j=0, ny-1 do o_iv_vel[*,j] = o_iv_vel[*,j] - euv_temporal_gradient
 o_iv_vel = reform(o_iv_vel) < (ergm.fpar1[6] + del_si) > (ergm.fpar1[6] - del_si)
 o_iv_vel -= ergm.fpar1[6]
 o_iv_vel = o_iv_vel * dispersion_fuv * speed_of_light / 140115.6d + 12.0d
@@ -1274,26 +1258,7 @@ for i=0, nx-1 do begin
 endfor
 
 restore, outfile_fuv_temp
-;------------------------------------------------------------
-;-- remove temporal variations of line center positions
-;------------------------------------------------------------
-if 0 then begin
-for j=0, ny-1 do cii_s[*,j,1] = cii_s[*,j,0] - euv_temporal_gradient
 
-for j=0, ny-1 do cii_d[*,j,0] = cii_d[*,j,0] - euv_temporal_gradient
-for j=0, ny-1 do cii_d[*,j,3] = cii_d[*,j,3] - euv_temporal_gradient
-
-for j=0, ny-1 do cii_q[*,j,0] = cii_q[*,j,0] - euv_temporal_gradient
-for j=0, ny-1 do cii_q[*,j,3] = cii_q[*,j,3] - euv_temporal_gradient
-for j=0, ny-1 do cii_q[*,j,5] = cii_q[*,j,5] - euv_temporal_gradient
-for j=0, ny-1 do cii_q[*,j,8] = cii_q[*,j,8] - euv_temporal_gradient
-
-for j=0, ny-1 do cii_p[*,j,0] = cii_p[*,j,0] - euv_temporal_gradient
-for j=0, ny-1 do cii_p[*,j,3] = cii_p[*,j,3] - euv_temporal_gradient
-for j=0, ny-1 do cii_p[*,j,5] = cii_p[*,j,5] - euv_temporal_gradient
-for j=0, ny-1 do cii_p[*,j,8] = cii_p[*,j,8] - euv_temporal_gradient
-for j=0, ny-1 do cii_p[*,j,10] = cii_p[*,j,10] - euv_temporal_gradient
-endif
 cii_cont = reform(cii_s[*,*,0])
 ;----------------------------------------------------
 ;-- calculation of non-thermal width
@@ -1326,7 +1291,7 @@ ti_c_ii2 = ti_max
 ;------------------------------------------------------------------
 cii1_vel = reform(cii_d[*,*,3])
 q1 = where(cii1_vel eq 0., cz) 
-for j=0, ny-1 do cii1_vel[*,j] = cii1_vel[*,j] - euv_temporal_gradient
+if (at_limb eq 0) then for j=0, ny-1 do cii1_vel[*,j] = cii1_vel[*,j] - euv_temporal_gradient
 cii1_vel = reform(cii1_vel) < (master_c1 + del_c1) > (master_c1 - del_c1)
 cii1_vel -= master_c1
 cii1_vel = cii1_vel * dispersion_fuv * speed_of_light / 133453.2d + 3.0
@@ -1335,7 +1300,7 @@ if (cz gt 0) then cii1_vel(q1) = 0.
 ;------------------------------------------------------------------
 cii2_vel = reform(cii_d[*,*,0])
 q1 = where(cii2_vel eq 0., cz) 
-for j=0, ny-1 do cii2_vel[*,j] = cii2_vel[*,j] - euv_temporal_gradient
+if (at_limb eq 0) then for j=0, ny-1 do cii2_vel[*,j] = cii2_vel[*,j] - euv_temporal_gradient
 cii2_vel = reform(cii2_vel) < (master_c2 + del_c2) > (master_c2 - del_c2)
 cii2_vel -= master_c2
 cii2_vel = cii2_vel * dispersion_fuv * speed_of_light / 133570.8d + 3.0
@@ -1573,21 +1538,24 @@ temporal_gradient_mg = temporal_gradient
 ;--------------------------------
 ;-- remove wavelength slope
 ;--------------------------------
-for kapa=0, 1 do for j=0, ny-1 do fe_par[*,j,kapa] = fe_par[*,j,kapa] - temporal_gradient_mg
+if (at_limb eq 0) then begin
+   for kapa=0, 1 do for j=0, ny-1 do fe_par[*,j,kapa] = fe_par[*,j,kapa] - temporal_gradient_mg
+endif
 
 for eta=0,3 do begin
    vm = reform(em_vel[*,*,eta])
-   for j=0, ny-1 do vm[*,j] -= temporal_gradient_mg
+   if (at_limb eq 0) then for j=0, ny-1 do vm[*,j] -= temporal_gradient_mg
    mean_vel = good_mean(vm)
    em_vel[*,*,eta] = (vm - mean_vel) * dispersion_nuv * speed_of_light / 279500.0d   ; velocity in km/s
 endfor   
 
-for kapa=0, 3 do for j=0, ny-1 do xmins_k[*,j,kapa*2] = xmins_k[*,j,kapa*2] - temporal_gradient_mg
-for kapa=0, 2 do for j=0, ny-1 do xmaxs_k[*,j,kapa*2] = xmaxs_k[*,j,kapa*2] - temporal_gradient_mg
-for j=0, ny-1 do mg_bnd[*,j, 17] = mg_bnd[*,j, 17] - temporal_gradient_mg
-for j=0, ny-1 do mg_bnd[*,j, 15] = mg_bnd[*,j, 15] - temporal_gradient_mg
-for j=0, ny-1 do k_spar[*,j,1] = k_spar[*,j,1] - temporal_gradient_mg
-
+if (at_limb eq 0) then begin
+   for kapa=0, 3 do for j=0, ny-1 do xmins_k[*,j,kapa*2] = xmins_k[*,j,kapa*2] - temporal_gradient_mg
+   for kapa=0, 2 do for j=0, ny-1 do xmaxs_k[*,j,kapa*2] = xmaxs_k[*,j,kapa*2] - temporal_gradient_mg
+   for j=0, ny-1 do mg_bnd[*,j, 17] = mg_bnd[*,j, 17] - temporal_gradient_mg
+   for j=0, ny-1 do mg_bnd[*,j, 15] = mg_bnd[*,j, 15] - temporal_gradient_mg
+   for j=0, ny-1 do k_spar[*,j,1] = k_spar[*,j,1] - temporal_gradient_mg
+endfor
 ;----------------------------------------
 ;-- normalize emission peak velocities 
 ;----------------------------------------
