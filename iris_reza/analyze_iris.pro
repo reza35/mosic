@@ -1541,8 +1541,8 @@ endfor
      wset, 13
      for kapa=0,3 do tvsclm, kpar[0:i,*,kapa], zm=zfac, xp=kapa*nx/zfac
      tvsclm, xmaxs_k[0:i,*,0], zm=zfac, xp=4*nx/zfac, cb=99
-     tvsclm, xmaxs_k[0:i,*,2], zm=zfac, xp=5*nx/zfac
-     tvsclm, xmaxs_k[0:i,*,3], zm=zfac, xp=6*nx/zfac
+     tvsclm, alog(reform(xmaxs_k[0:i,*,2])>.1), zm=zfac, xp=5*nx/zfac
+     tvsclm, alog(reform(xmaxs_k[0:i,*,3])>.1), zm=zfac, xp=6*nx/zfac
      tvsclm, type_k, zm=zfac, xp=7*nx/zfac
      tvsclm, em_lines[0:i,*,7], zm=zfac, xp=8*nx/zfac
      
@@ -1841,10 +1841,10 @@ if (do_quiet eq 0) then begin
   tvsclm, cogk_1,     ilim=[-7., 7.], xp=4*nx/zfac, zm=zfac, cb=99
 ;------------------------------------------
   window, 7,xs=nx*6/zfac,ys=ny*2/zfac,title='Mg II intensities: K3, K2v, K2 width, K-index, K3/V, V/R, V/R, WB emission widths, WB-int, K3, K1, Mg II k core'
-  tvsclm, k3_b, zm=zfac
-  tvsclm, k2v_b,     xp=1*nx/zfac, zm=zfac
+  tvsclm, k3_b * mg_wing, zm=zfac
+  tvsclm, k2v_b * mg_wing,     xp=1*nx/zfac, zm=zfac
   tvsclm, k2_width,     xp=2*nx/zfac, zm=zfac
-  tvsclm, kindex5,   xp=3*nx/zfac, zm=zfac
+  tvsclm, kindex5 * mg_wing,   xp=3*nx/zfac, zm=zfac
   tvsclm, mg_bnd[*,*,6]/(mg_bnd[*,*,7]>0.1), xp=4*nx/zfac, zm=zfac
   tvsclm, mg_bnd[*,*,7]/(mg_bnd[*,*,8]>0.1), xp=5*nx/zfac, zm=zfac, cb=99
 
@@ -1865,10 +1865,10 @@ if (do_quiet eq 0) then begin
      tvsclm, cogh_1,  ilim=[-6., 6.],       xp=4*nx/zfac, zm=zfac, cb=99
 
  window, 8,xs=nx*6/zfac,ys=ny*2/zfac,title='Mg II intensities: H3, H2v, H2 width, H-index, H3/V, V/R, V/R, WB emission widths, WB-int, H3, H1, Mg II h core'
-     tvsclm, h3_b, zm=zfac
-     tvsclm, h2v_b,    xp=1*nx/zfac, zm=zfac
+     tvsclm, h3_b * mg_wing, zm=zfac
+     tvsclm, h2v_b * mg_wing,    xp=1*nx/zfac, zm=zfac
      tvsclm, h2_width,    xp=2*nx/zfac, zm=zfac
-     tvsclm, hindex5,  xp=3*nx/zfac, zm=zfac
+     tvsclm, hindex5 * mg_wing,  xp=3*nx/zfac, zm=zfac
      tvsclm, mg_bnd[*,*,20]/(mg_bnd[*,*,21]>0.1), xp=4*nx/zfac, zm=zfac
      tvsclm, mg_bnd[*,*,20]/(mg_bnd[*,*,19]>0.1), xp=5*nx/zfac, zm=zfac
 
