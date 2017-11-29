@@ -23,6 +23,7 @@ function my_sgf, x, y, e, fit0, range0, dlambda, good, double = double
 ; Apr 26, 2016 : improved documentation
 ; May 11, 2016 : continuum intensity can be negative  
 ; May 17, 2016 : common block to share the line tag   
+; Nov 29, 2017 : flag failed fits  
 ;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
@@ -62,9 +63,9 @@ common share_line, die_linie
   res = mpfitfun('rgauss', x[good], y[good], e[good], param, parinfo=parinfo, /quiet, nprint=5, errmsg=errmsg, $ ;
     maxiter = 2000, dof = dof, bestnorm = bestnorm, double = double,status = status, perror=perr)
 
-;  if (n_elements(perr) eq 0)and(status ge 0.) then perr = res - res
   if (n_elements(perr) eq 0)and(status ge 0.) then perr = res - res
-  ;print, errmsg
+  if (status lt 0.) then perr = (res - res) + 100.
+
   result = {b:res[0], i1:res[1], p1:res[2], w1:res[3], status:status, sigma:perr}
   return, result
 end

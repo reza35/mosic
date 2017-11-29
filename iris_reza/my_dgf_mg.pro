@@ -19,7 +19,8 @@ function my_dgf_mg, x, y, e, fit0, fit1, range0, range1, dlambda, good, double =
 ; Dec 19, 2014 : created 
 ; Apr 26, 2016 : improved documentation
 ; May 11, 2016 : continuum intensity can be negative
-; May 13, 2016 : range of parameters updated  
+; May 13, 2016 : range of parameters updated
+; Nov 29, 2017 : flag failed fits  
 ;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
@@ -62,6 +63,7 @@ function my_dgf_mg, x, y, e, fit0, fit1, range0, range1, dlambda, good, double =
     maxiter = 2000, dof = dof, bestnorm = bestnorm, yfit = yfit, double = double,status = status, /quiet, perror=perr)
 
   if (n_elements(perr) eq 0)and(status ge 0.) then perr = res - res
+  if (status lt 0.) then perr = (res - res) + 100.
 
   result = {i1:res[0], p1:res[1], w1:res[2], i2:res[3], p2:res[4], w2:res[5], fit:yfit, status:status,sigma:perr}
   return, result
