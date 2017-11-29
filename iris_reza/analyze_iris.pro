@@ -1546,8 +1546,8 @@ endfor
      tvsclm, type_k, zm=zfac, xp=7*nx/zfac
      tvsclm, em_lines[0:i,*,7], zm=zfac, xp=8*nx/zfac
      
-     for kapa=6,9 do tvsclm, mg_bnd[0:i,*,kapa], zm=zfac, xp=(kapa-6)*nx/zfac, yp=ny/zfac
-     tvsclm, mg_bnd[0:i,*,7]/mg_bnd[0:i,*,8], zm=zfac, xp=4*nx/zfac, yp=ny/zfac, cb=99
+     for kapa=6,9 do tvsclm, mg_bnd[0:i,*,kapa]*mg_wing[0:i,*], zm=zfac, xp=(kapa-6)*nx/zfac, yp=ny/zfac
+     tvsclm, (mg_bnd[0:i,*,7]/mg_bnd[0:i,*,8]) < 2. > .2, zm=zfac, xp=4*nx/zfac, yp=ny/zfac, cb=99
      tvsclm, mg_bnd[0:i,*,15], zm=zfac, xp=5*nx/zfac, yp=ny/zfac, cb=99
      tvsclm, mg_bnd[0:i,*,17], zm=zfac, xp=6*nx/zfac, yp=ny/zfac, cb=99
      tvsclm, em_lines[0:i,*,1], zm=zfac, xp=7*nx/zfac, yp=ny/zfac
