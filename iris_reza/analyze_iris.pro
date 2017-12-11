@@ -1420,11 +1420,13 @@ wing = mean(vv[60:64])
 
 ergm =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, 20, /plt, do_gauss=1) ;
 k_fit_gauss = fltarr(nx, ny, n_elements(ergm.sfit), 4)
+k_sub_wing = fltarr(nx, ny, n_elements(ergm.sfit))
 
 if (do_h eq 1) then begin
     master = [master_h1v1, master_h1v2, master_h1r1, master_h1r2]
     ergh =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, 20, /plt, /do_H_line, do_gauss=1) ;
     h_fit_gauss = fltarr(nx, ny, n_elements(ergh.sfit),  4)
+    h_sub_wing = fltarr(nx, ny, n_elements(ergm.sfit))
 endif
 
 if (do_quiet ne 1) then begin
@@ -1479,6 +1481,7 @@ for i=0, nx-1 do begin
                  k_fit_gauss[i, j, *, 1] = erg.sfit
                  k_fit_gauss[i, j, *, 2] = erg.dfit
                  k_fit_gauss[i, j, *, 3] = erg.tfit
+                 k_sub_wing[i, j, *] = erg.sub_wing 
               endif
               
               ;----------------------------------------------------------------------
@@ -1508,6 +1511,7 @@ for i=0, nx-1 do begin
                   h_fit_gauss[i, j, *, 1] = erg.sfit
                   h_fit_gauss[i, j, *, 2] = erg.dfit
                   h_fit_gauss[i, j, *, 3] = erg.tfit
+                  h_sub_wing[i, j, *] = erg.sub_wing 
                endif
            endif
            endif
@@ -1940,7 +1944,7 @@ if (do_gauss eq 1) then begin
   endif else begin;----------- for k lines profiles + /do_gauss
     save, filename=outfile_mg, fe_par, fe_int, xmaxs_k, xmins_k, mg_bnd, mg_wing, $
     k1_width, k2_width, k_wb_width, k_wb_int, kvr, k3_b,k2v_b,k2r_b, $
-    mgk_h1v_vel, mgk_h1r_vel, mgk_h2v_vel, mgk_h2r_vel, mgk_h3_vel, $
+    mgk_h1v_vel, mgk_h1r_vel, mgk_h2v_vel, mgk_h2r_vel, mgk_h3_vel, k_sub_wing, $
     cogk_1, cogk_5, mgk_core, kpar, k2v, k2r, k3, kindex1, kindex5, k_spar, gauss_vel_k,$
     master_k3, dispersion_nuv, master_k2v, master_k2r,  temporal_gradient, k1v_b, k1r_b, type_k,$
     em_lines, em_vel, k_spar, k_dpar, k_tpar, tpar_v_k, tpar_r_k, dpar_v_k, dpar_r_k, k_fit_gauss
@@ -1957,7 +1961,7 @@ if (do_gauss eq 1) then begin
   endif else begin;----------- for k lines profiles
     save, filename=outfile_mg, fe_par, fe_int, xmaxs_k, xmins_k, mg_bnd, mg_wing, $
     k1_width, k2_width, k_wb_width, k_wb_int, kvr, k3_b,k2v_b,k2r_b, $
-    mgk_h1v_vel, mgk_h1r_vel, mgk_h2v_vel, mgk_h2r_vel, mgk_h3_vel, $
+    mgk_h1v_vel, mgk_h1r_vel, mgk_h2v_vel, mgk_h2r_vel, mgk_h3_vel, h_sub_wing, $
     cogk_1, cogk_5, mgk_core, kpar, k2v, k2r, k3, kindex1, kindex5, k_spar, gauss_vel_k,$
     master_k3, dispersion_nuv, master_k2v, master_k2r,  temporal_gradient, k1v_b, k1r_b, type_k,$
     em_lines, em_vel

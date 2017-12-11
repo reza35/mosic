@@ -265,7 +265,8 @@ if (konti gt 10.) then begin  ; skip this correction off disk
    endif   
    iline2 = (iline2 - yfit) > 0.
 endif
-   subtracted_wing = iline * konti -  iline2
+
+subtracted_wing = iline * konti -  iline2
    ; if one adds this curve to the 'py' (below), it produces the 'prof'.
    ; py is the wing-subtracted profile for the Gaussian fitting while prof
    ; is the original profiel for the line analysis. The emission peaks
