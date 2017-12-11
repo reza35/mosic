@@ -1,4 +1,4 @@
-pro analyze_iris, filepath, do_mg=do_mg, do_gauss=do_gauss, do_cii=do_cii, do_si=do_si,do_o1=do_o1,do_cl=do_cl,do_cont=do_cont, do_h=do_h, zfac=zfac, fast=fast, do_1394=do_1394, do_plot=do_plot, do_quiet=do_quiet
+pro analyze_iris, filepath, do_mg=do_mg, do_gauss=do_gauss, do_cii=do_cii, do_si=do_si,do_o1=do_o1,do_cl=do_cl,do_cont=do_cont, do_h=do_h, zfac=zfac, fast=fast, do_1394=do_1394, do_plot=do_plot, do_quiet=do_quiet, do_fex=do_fex
 
 ;+
 ;===============================================================
@@ -42,12 +42,14 @@ pro analyze_iris, filepath, do_mg=do_mg, do_gauss=do_gauss, do_cii=do_cii, do_si
 ;
 ; Jan 27, 2017 : keep 280 nm continuum intensity in DN units
 ;
+; Feb 22, 2017 : experimental Fe XXI analysis
+;
 ; Aug 21, 2017 : bug fix for the dummy orbital velocity.  
 ;  
-; Nov 20, 2017 : more control of the random steps.
-;
-; Nov 29, 2017 : limb flag  
+; Nov 20, 2017 : better control of the random steps.
 ;  
+; Nov 29, 2017 : limb flag  
+;
 ; Dec 04, 2017 : the output filename keeps track of the input filename (date and time)
 ;
 ; Dec 11, 2017 : creates new overview Jpeg output from the Mg II data
@@ -139,6 +141,7 @@ if (n_elements(do_o1) eq 0)  then do_o1=0  else do_o1=1
 if (n_elements(do_si) eq 0)  then do_si=0  else do_si=1
 if (n_elements(do_1394) eq 0)  then do_1394=0  else do_1394=1
 if (n_elements(do_cl) eq 0)  then do_cl=0  else do_cl=1
+if (n_elements(do_fex) eq 0)  then do_fex=0  else do_fex=1
 if (n_elements(do_cont) eq 0) then do_cont=0 else do_cont=1
 if (n_elements(fast) eq 0)  then fast=0  else fast=1
 if (n_elements(do_plot) eq 0)  then do_plot=0
@@ -342,6 +345,13 @@ if (do_cl eq 1) then begin
 ;------------------------------------------------------------------------
 endif
 
+if (do_fex eq 1) then begin
+;------------------------------------------------------------------------
+   fex = fltarr(nx, ny, 9)        ;  Fe XII or Fe XXI  single gaussian fit parameters
+   fex_fit_gauss = fltarr(nx, ny, 50, 2) ; to keep results of single Gaussian fits
+;------------------------------------------------------------------------
+endif
+
 
 
 
@@ -481,6 +491,13 @@ if (count2 ge 1) then x(q2)= good_mean(x)   &   fe[*,*,1] = x
 for j = 0, ny-1 do fe[*,j,0] = fe[*,j,0] - temporal_gradient
 for j = 0, ny-1 do fe[*,j,1] = fe[*,j,1] - temporal_gradient
 
+;----------------------------------------------------------------
+; create a dummy file in case O I data is not present
+; it will be overwritten, in case one runs the O I data reduction 
+;-----------------------------------------------------------------
+euv_temporal_gradient = temporal_gradient - temporal_gradient
+save, filename=outfile_fuv_temp, euv_temporal_gradient
+
 ;-------------------------------------------------
 ;-- normalize Fe velocities to average QS
 ;-------------------------------------------------
@@ -512,12 +529,6 @@ for i = 0, 1 do begin
 endfor
 
 
-;----------------------------------------------------------------
-; create a dummy file in case O I data is not present
-; it will be overwritten, in case one runs the O I data reduction 
-;-----------------------------------------------------------------
-euv_temporal_gradient = temporal_gradient - temporal_gradient
-save, filename=outfile_fuv_temp, euv_temporal_gradient
 
 x = reform(fe[*,*,0])  &  if (count1 ge 1) then x(q1)= 0.  &   fe[*,*,0] = x
 x = reform(fe[*,*,1])  &  if (count2 ge 1) then x(q2)= 0.  &   fe[*,*,1] = x
@@ -531,7 +542,7 @@ save, filename=outfile_cont, kont, cont, fe, i_cont, temporal_gradient
 
 endif
 
-; to keep the filenames backward compatible
+; to keep it backward compatible
 h = check_if_file_exists(outfile_cont)
 if (string2num(h[1]) ne 1.) then begin 
    old_filename = inpath + 'iris_cont_analyzed_scan_'+cc+'.sav'
@@ -544,7 +555,6 @@ if (string2num(h[1]) ne 1.) then begin
    spawn, 'mv '+old_filename+'  '+outfile_fuv_temp
 endif
 restore, outfile_cont
-
 
 
 ;------------------------------------------------------------------
@@ -847,6 +857,137 @@ print, systime()
 endif
 
 
+;------------------------------------------------------------------
+;++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+;------------------------ Fe XII, FE XXI lines---------------------
+;++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; Fe XII : 1349.40, E_low= 0.0, 4S 1.5-2P 0.5      log T = 6.2
+; Fe XXI : 1354.08, E_low= 0.0, 3P 0.0-3P 1.0      log T = 7.0
+;------------------------------------------------------------------
+if (do_fex eq 1) then begin
+
+the_line = 'FeXII_FeXXI'
+print, 'select rough range of the hot lines'
+vv = avprof
+read_plot_click, 2, vv, vv, pos
+vv = vv[pos[0]:pos[1]]
+print, 'select exact range of the hot lines'
+read_plot_click, 2, vv, vv, pos1
+
+pos = pos1 + pos[0]
+
+range = pos
+print, range
+vv = avprof[pos[0]:pos[1]]
+plot, vv
+;stop
+
+if (num_files eq 1) then vv = avprof[range[0]:range[1]] else vv = avprof
+s = max( gauss_smooth(vv, 3., /edge_truncate), posmax)
+master = posmax
+
+ca_ilo = (master - 150.) > 0.
+ca_ihi = (master + 150.) < (range[1] - range[0])
+
+fex_fit_gauss = fltarr(nx, ny, n_elements(vv), 2)
+
+if (do_quiet eq 0) then begin
+  window, 8, xs=nx*5/zfac, ys=ny/zfac, title='Fe XII,  Fe XXI, ...'
+endif
+best_fit = [1., 10., master, 7.]
+ergm = perform_single_gaussian_fex(vv,ca_ilo,ca_ihi, master, dispersion_fuv, 1)
+best_fit = [ergm.spar[0], ergm.spar[2], ergm.spar[1], ergm.spar[3]]
+;stop
+t_start = systime(/seconds)
+;nx = 500
+for i=0, nx-1 do begin 
+   v = readfits(data, hed, nslice=i, /silent) 
+   q = where(~finite(v), count)
+   if (count gt 0) then v(q) = -10.
+   v = despike_iris_raster(v, master + range[0], master + range[0])
+ 
+   for j=0, ny-1 do begin
+      tmp = gauss_smooth(reform(v[range[0]:range[1], j+z0]),1, /edge_truncate)
+        if (max(tmp) gt (-1.))and(stddev(tmp) gt 0.5) then begin
+          erg = perform_single_gaussian_fex(tmp,ca_ilo,ca_ihi, master, dispersion_fuv, 0)  
+
+          fex[i, j, *]   = erg.spar
+          fex_fit_gauss[i, j, *, 0] = erg.sprf
+          fex_fit_gauss[i, j, *, 1] = erg.sfit
+        endif
+   endfor
+   ;print, nx-1 -i, FORMAT='(%"\b%d\b\b\b",$)'
+   if ((i mod 10) eq 0)and(i gt 0)and(do_quiet eq 0) then begin
+     tvsclm, fex[0:i, *, 0], xp=0, zm=zfac
+     tvsclm, fex[0:i, *, 1], xp=1*nx/zfac, zm=zfac
+     tvsclm, fex[0:i, *, 2], xp=2*nx/zfac, zm=zfac
+     tvsclm, fex[0:i, *, 3], xp=3*nx/zfac, zm=zfac
+     tvsclm, fex[0:i, *, 4]<100., xp=4*nx/zfac, zm=zfac ; chi square
+     print, i, nx-1 -i, round((systime(/seconds) - t_start)/(float(i+1)) * float(nx-1 -i) / 60.), ' min'
+   endif
+endfor
+
+restore, outfile_fuv_temp
+;----------------------------------------------------
+;-- calculation of non-thermal width
+;----------------------------------------------------
+;- inputs: (1/e) width of the line profile in km/s
+
+;instr_fwhm = 0.0318 ; instrumental FWHM in A for long FUV
+instr_fwhm = 0.028556 ; instrumental FWHM in A for short FUV
+;----------------------------------------------------
+;w = reform(fex[*,*,3])  < 30. ; 1/e width in pixel
+;w = (w/2.) * (dispersion_fuv * 1.0d-3 /134.940) * speed_of_light ; 1/e width in km/s
+;wnt_fex = iris_nonthermalwidth('Fex','I', 1349.40, w, instr_fwhm, ti_max=ti_max,Wt_v=wt) ; non-thermal velocity in km/s
+;wt_fex = wt
+;ti_fex = ti_max
+;-------------------------------------------------------------
+
+fex_i_vel =  reform(fex[*,*,1])
+q1 = where(fex_i_vel eq 0., cz)         ; zero pixels
+;for j=0, ny-1 do fex_i_vel[*,j] = fex_i_vel[*,j] - euv_temporal_gradient
+fex_i_vel -= ergm.spar[1]
+if (cz gt 0) then fex_i_vel(q1) = 0.
+fex_i_vel = fex_i_vel * dispersion_fuv * speed_of_light / 134940.0d + 1.
+;-----------------------------------------------------------------------------------
+fex_cont = reform(fex[*, *, 0])
+
+if (do_quiet eq 0) then begin
+  window, 12, xs=nx*6/zfac,ys=ny*2/zfac, title='FeXII: velocity, Log amplitude, FWHM, Log area, Log UV-cont, Log band H3, H2v, H2r'
+
+  tvsclm, fex_i_vel < 15. > (-15.), zm=zfac, cb=99                ; velocity
+  tvsclm, fex_cont,               xp=1*nx/zfac, yp=0, zm=zfac     ; continuum
+  tvsclm, fex[*,*,3]<15.     ,    xp=2*nx/zfac, yp=0, zm=zfac     ; 1/e width
+  tvsclm, alog10(fex[*,*,2]> 1.), xp=3*nx/zfac, yp=0, zm=zfac     ; log amplitude
+  tvsclm, wnt_fex,                xp=4*nx/zfac, yp=ny/zfac, zm=zfac ; non-thermal width
+  tvsclm, fex[*,*,4] < 10.,       xp=5*nx/zfac, yp=ny/zfac, zm=zfac ; chi^2 map
+
+  window, 14, title='reduced chi-square statistics, FeXII fits'
+  x= reform(fex[*, *, 4]) & q=where(x ne 0.) & plot_histogram, x(q), xrange=[0, 10]
+endif 
+
+x= reform(fex[*, *, 4])     &      q=where(x ne 0.)
+r = percentiles(x(q), value=[0.05, 0.25, 0.5, 0.75, 0.95])
+print, '-----------------------------------------------------'
+print, 'Percentiles ', r
+print, '-----------------------------------------------------'   
+
+a = 0.
+save, filename=outfile_fex, wnt_fex, wt_fex, ti_fex, fex, fex_fit_gauss, $
+      fex_cont, master, ergm, euv_temporal_gradient
+
+s = reform(fex[*,*,3]) & s= median(s, 3) & write_jpeg,inpath+'FeXII_sigma.jpg', bytscl(s)
+s = reform(fex[*,*,2]) & s-= min(s)      & s= median(s, 3) & s = alog10(s + 1e-3) &  write_jpeg,inpath+'FeXII_log_amp.jpg', bytscl(s)
+
+print, 'FeXII: average run-time per slit= ',round((systime(/seconds) - t_start) / float(nx)), ' sec'
+a = 0.
+save, filename=outfile_fex, fex, fex_fit_gauss, $
+      fex_i_vel, ergm, euv_temporal_gradient
+
+stop
+endif
+
+
 
 
 
@@ -872,7 +1013,7 @@ if (do_quiet ne 1) then begin
   window, 17, xs=nx*6/zfac, ys=ny/zfac, title='Si IV parameters: single Gaussian parameters'
   window, 11, xs=nx*8/zfac, ys=ny/zfac, title ='Si IV parameters: chi-sq in five different fits'
 endif
-ergm = analyze_si(vv, 0, n2-1, master_si2, dispersion_fuv, 1)
+ergm = analyze_si(vv, 0, n2-1, master_si2, dispersion_fuv, 0)
 ; it contains properties of the average profile and its fit
 best_fit = [ergm.spar1[0], ergm.spar1[2], ergm.spar1[1], ergm.spar1[3]]
 
@@ -1217,10 +1358,10 @@ restore, inpath+'cii_lines_position.sav'
 if (do_quiet eq 0) then begin
   window, 17, xs=nx*5/zfac, ys=ny/zfac, title='C II: continuum, amplitude, ...'
   window, 10, xs=700, ys=550, title='C II and Ni II profiles'
-  ergm = analyze_c2(vv, ca_ilo[1], ca_ihi[1], master_c2, dispersion_fuv, 1, 0) 
+  ergm = analyze_c2(vv, ca_ilo[1], ca_ihi[1], master_c2, dispersion_fuv, do_plot, 0) 
   window, 11, xs=nx*6/zfac, ys=ny/zfac, title='C II and Ni II: chi squares, ...'
 endif else begin
-  ergm = analyze_c2(vv, ca_ilo[1], ca_ihi[1], master_c2, dispersion_fuv, 1, 0)   
+  ergm = analyze_c2(vv, ca_ilo[1], ca_ihi[1], master_c2, dispersion_fuv, do_plot, 0)   
 endelse
 best_fit = [ergm.spar1[0], ergm.spar1[2], ergm.spar1[1], ergm.spar1[3]]
 
@@ -1418,13 +1559,13 @@ master = [master_k1v1, master_k1v2, master_k1r1, master_k1r2]
 if (num_files eq 1) then vv = avprof[Mg_range[0]:Mg_range[1]] else vv = avprof
 wing = mean(vv[60:64])
 
-ergm =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, 20, /plt, do_gauss=1) ;
+ergm =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, 20, plt=do_plot,  do_gauss=1) ;
 k_fit_gauss = fltarr(nx, ny, n_elements(ergm.sfit), 4)
 k_sub_wing = fltarr(nx, ny, n_elements(ergm.sfit))
 
 if (do_h eq 1) then begin
     master = [master_h1v1, master_h1v2, master_h1r1, master_h1r2]
-    ergh =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, 20, /plt, /do_H_line, do_gauss=1) ;
+    ergh =  analyze_mg(vv, wing, ca_ilo, ca_ihi, master, dispersion_nuv, 20, plt=do_plot,  /do_H_line,  do_gauss=1) ;
     h_fit_gauss = fltarr(nx, ny, n_elements(ergh.sfit),  4)
     h_sub_wing = fltarr(nx, ny, n_elements(ergm.sfit))
 endif
@@ -1444,7 +1585,8 @@ for i=0, nx-1 do begin
    
    for j=0, ny-1 do begin
         ;-----------------------------------------------------------------------
-        tmp = reform(v[*, j + z0]) & tmp = gauss_smooth(tmp, 1., /edge_truncate)
+        ;tmp = reform(v[*, j + z0]) & tmp = gauss_smooth(tmp, 1., /edge_truncate)
+        tmp = reform(v[*, j + z0]) & tmp = gauss_smooth(tmp, 1.5, /edge_truncate)
 
         ; a symmetric wing range at ~ 1.2 A
         d_stp = 50.0 / (dispersion_nuv / 2.544)
@@ -1529,19 +1671,20 @@ endfor
      wset, 13
      for kapa=0,3 do tvsclm, kpar[0:i,*,kapa], zm=zfac, xp=kapa*nx/zfac
      tvsclm, xmaxs_k[0:i,*,0], zm=zfac, xp=4*nx/zfac, cb=99
-     tvsclm, alog(reform(xmaxs_k[0:i,*,2])>.1), zm=zfac, xp=5*nx/zfac
-     tvsclm, alog(reform(xmaxs_k[0:i,*,3])>.1), zm=zfac, xp=6*nx/zfac
+     tvsclm, (reform(xmaxs_k[0:i,*,2])>.1)*mg_wing[0:i,*], zm=zfac, xp=5*nx/zfac
+     tvsclm, (reform(xmaxs_k[0:i,*,3])>.1)*mg_wing[0:i,*], zm=zfac, xp=6*nx/zfac
      tvsclm, type_k, zm=zfac, xp=7*nx/zfac
-     tvsclm, em_lines[0:i,*,7], zm=zfac, xp=8*nx/zfac
+     tvsclm, alog((mg_bnd[0:i,*,0]*mg_wing[0:i,*])> 5.), zm=zfac, xp=8*nx/zfac
      
      for kapa=6,9 do tvsclm, mg_bnd[0:i,*,kapa]*mg_wing[0:i,*], zm=zfac, xp=(kapa-6)*nx/zfac, yp=ny/zfac
-     tvsclm, (mg_bnd[0:i,*,7]/mg_bnd[0:i,*,8]) < 2. > .2, zm=zfac, xp=4*nx/zfac, yp=ny/zfac, cb=99
+     tvsclm, (mg_bnd[0:i,*,7]/mg_bnd[0:i,*,8] > .1) < 2. > .2, zm=zfac, xp=4*nx/zfac, yp=ny/zfac, cb=99
      tvsclm, mg_bnd[0:i,*,15], zm=zfac, xp=5*nx/zfac, yp=ny/zfac, cb=99
      tvsclm, mg_bnd[0:i,*,17], zm=zfac, xp=6*nx/zfac, yp=ny/zfac, cb=99
-     tvsclm, em_lines[0:i,*,1], zm=zfac, xp=7*nx/zfac, yp=ny/zfac
-     tvsclm, em_lines[0:i,*,3], zm=zfac, xp=8*nx/zfac, yp=ny/zfac
+     tvsclm, alog((em_lines[0:i,*,1] * mg_wing[0:i,*]) > .1 < 10.), zm=zfac, xp=7*nx/zfac, yp=ny/zfac
+     tvsclm, alog((mg_bnd[0:i,*,0]/(mg_bnd[0:i,*,5])>.1) > .3), zm=zfac, xp=8*nx/zfac, yp=ny/zfac
   endif
-  if ((i mod 10) eq 0)and(i gt 0) then print, i, nx-1 -i, round( (systime(/seconds)- t_start)/float(i+1)* float(nx-1 -i) / 60.), ' min'
+  if ((i mod 5) eq 0)and(i gt 0) then print, i, nx-1 -i, round( (systime(/seconds)- t_start)/float(i+1)* float(nx-1 -i) / 60.), ' min'
+  if ((i mod 5) eq 0)and(i gt 0) then save, filename=outfile_mg ;<<<<<<<<<<< just for quick check
 
 ;  print, i, nx-1 -i, round((systime(/seconds)- t_start)/float(i+1)* float(nx-1 -i) / 60.),'     min'
 ;  if ((i mod 5) eq 0) then begin
@@ -1552,7 +1695,7 @@ endfor
 ;  endif
  
 endfor
-save, filename=filepath+'em_lines.sav', em_lines
+save, filename=outfile_mg_em, em_lines
 ;-------------------------------------------------
 ;-- systematic velocity residuals
 ;-------------------------------------------------
@@ -1578,7 +1721,7 @@ if (at_limb eq 0) then begin
    for j=0, ny-1 do mg_bnd[*,j, 17] = mg_bnd[*,j, 17] - temporal_gradient_mg
    for j=0, ny-1 do mg_bnd[*,j, 15] = mg_bnd[*,j, 15] - temporal_gradient_mg
    for j=0, ny-1 do k_spar[*,j,1] = k_spar[*,j,1] - temporal_gradient_mg
-endfor
+endif
 ;----------------------------------------
 ;-- normalize emission peak velocities 
 ;----------------------------------------
@@ -1717,12 +1860,13 @@ if (do_h eq 1) then begin
   ;--------------------------------
   ;-- remove wavelength slope
   ;--------------------------------
-  for kapa=0, 3 do for j=0, ny-1 do xmins_h[*,j,kapa*2] = xmins_h[*,j,kapa*2] - temporal_gradient_mg
-  for kapa=0, 2 do for j=0, ny-1 do xmaxs_h[*,j,kapa*2] = xmaxs_h[*,j,kapa*2] - temporal_gradient_mg
-  for j=0, ny-1 do mg_bnd[*,j, 26] = mg_bnd[*,j, 26] - temporal_gradient_mg
-  for j=0, ny-1 do mg_bnd[*,j, 28] = mg_bnd[*,j, 28] - temporal_gradient_mg
-  for j=0, ny-1 do h_spar[*,j,0] = h_spar[*,j,0] - temporal_gradient_mg
-
+  if (at_limb eq 0) then begin
+     for kapa=0, 3 do for j=0, ny-1 do xmins_h[*,j,kapa*2] = xmins_h[*,j,kapa*2] - temporal_gradient_mg
+     for kapa=0, 2 do for j=0, ny-1 do xmaxs_h[*,j,kapa*2] = xmaxs_h[*,j,kapa*2] - temporal_gradient_mg
+     for j=0, ny-1 do mg_bnd[*,j, 26] = mg_bnd[*,j, 26] - temporal_gradient_mg
+     for j=0, ny-1 do mg_bnd[*,j, 28] = mg_bnd[*,j, 28] - temporal_gradient_mg
+     for j=0, ny-1 do h_spar[*,j,0] = h_spar[*,j,0] - temporal_gradient_mg
+  endif
   ;----------------------------------------
   ;-- normalize emission peak velocities 
   ;----------------------------------------
@@ -1829,22 +1973,22 @@ if (do_quiet eq 0) then begin
   tvsclm, mgk_h2v_vel, ilim=[-10.0, 10.0], xp=1*nx/zfac, zm=zfac, cb=99
   tvsclm, mgk_h2r_vel, ilim=[-10.0, 10.0], xp=2*nx/zfac, zm=zfac, cb=99
   tvsclm, mgk_h3_vel, ilim=[-15.0, 15.0], xp=3*nx/zfac, zm=zfac, cb=99
-  tvsclm, cogk_1,     ilim=[-7., 7.], xp=4*nx/zfac, zm=zfac, cb=99
+  tvsclm, cogk_1,     ilim=[-9., 9.], xp=4*nx/zfac, zm=zfac, cb=99
 ;------------------------------------------
   window, 7,xs=nx*6/zfac,ys=ny*2/zfac,title='Mg II intensities: K3, K2v, K2 width, K-index, K3/V, V/R, V/R, WB emission widths, WB-int, K3, K1, Mg II k core'
-  tvsclm, k3_b * mg_wing, zm=zfac
-  tvsclm, k2v_b * mg_wing,     xp=1*nx/zfac, zm=zfac
-  tvsclm, k2_width,     xp=2*nx/zfac, zm=zfac
+  tvsclm, alog((k3_b * mg_wing)> 5.1), zm=zfac
+  tvsclm, alog((k2v_b * mg_wing)> 20.1), xp=1*nx/zfac, zm=zfac
+  tvsclm, alog(k1r_b * mg_wing > 10.),     xp=2*nx/zfac, zm=zfac
   tvsclm, kindex5 * mg_wing,   xp=3*nx/zfac, zm=zfac
-  tvsclm, mg_bnd[*,*,6]/(mg_bnd[*,*,7]>0.1), xp=4*nx/zfac, zm=zfac
-  tvsclm, mg_bnd[*,*,7]/(mg_bnd[*,*,8]>0.1), xp=5*nx/zfac, zm=zfac, cb=99
+  tvsclm, mg_bnd[*,*,7]/(mg_bnd[*,*,6]>0.1) < 8. > .2, xp=4*nx/zfac, zm=zfac
+  tvsclm, (mg_bnd[*,*,7]/(mg_bnd[*,*,8]>0.1)) < 2. > .2, xp=5*nx/zfac, zm=zfac, cb=99
 
-  tvsclm, kvr < 3. > .3,  xp=0*nx/zfac, yp=ny/zfac, zm=zfac, cb=99
+  tvsclm, mg_bnd[*,*,15],  xp=0*nx/zfac, yp=ny/zfac, zm=zfac, cb=99
   tvsclm, k_wb_width,     xp=1*nx/zfac, yp=ny/zfac, zm=zfac
   tvsclm, k_wb_int,       xp=2*nx/zfac, yp=ny/zfac, zm=zfac
-  tvsclm, k3 < 3.,        xp=3*nx/zfac, yp=ny/zfac, zm=zfac
-  tvsclm, k1,             xp=4*nx/zfac, yp=ny/zfac, zm=zfac
-  tvsclm, alog10(mgk_core > 1.), xp=5*nx/zfac, yp=ny/zfac, zm=zfac
+  tvsclm, (reform(xmaxs_k[*,*,2] * mg_wing)>.1),        xp=3*nx/zfac, yp=ny/zfac, zm=zfac
+  tvsclm, alog((mg_bnd[*,*,7]/(mg_bnd[*,*,0]>0.1)) > 1.2 < 2e2),          xp=4*nx/zfac, yp=ny/zfac, zm=zfac
+  tvsclm, alog(mgk_core * mg_wing > 1.), xp=5*nx/zfac, yp=ny/zfac, zm=zfac
 ;------------------------------------------
 ;------------------------------------------
   if (do_h eq 1) then begin
@@ -1852,23 +1996,24 @@ if (do_quiet eq 0) then begin
      tvsclm, mgh_h2v_vel, ilim=[-10.0, 10.0], xp=0*nx/zfac, zm=zfac, cb=99     
      tvsclm, mgh_h2r_vel, ilim=[-10.0, 10.0], xp=1*nx/zfac, zm=zfac, cb=99
      tvsclm, mgh_h3_vel,  ilim=[-15.0, 15.0],  xp=2*nx/zfac, zm=zfac, cb=99
-     tvsclm, cogh_5,  ilim=[-6., 6.],       xp=3*nx/zfac, zm=zfac, cb=99
-     tvsclm, cogh_1,  ilim=[-6., 6.],       xp=4*nx/zfac, zm=zfac, cb=99
+     tvsclm, cogh_5,      ilim=[-9., 9.],      xp=3*nx/zfac, zm=zfac, cb=99
+     tvsclm, cogh_1,      ilim=[-9., 9.],      xp=4*nx/zfac, zm=zfac, cb=99
 
- window, 8,xs=nx*6/zfac,ys=ny*2/zfac,title='Mg II intensities: H3, H2v, H2 width, H-index, H3/V, V/R, V/R, WB emission widths, WB-int, H3, H1, Mg II h core'
+     window, 8,xs=nx*6/zfac,ys=ny*2/zfac,title='Mg II intensities: H3, H2v, H2 width, H-index, H3/V, V/R, V/R, WB emission widths, WB-int, H3, H1, Mg II h core'
      tvsclm, h3_b * mg_wing, zm=zfac
      tvsclm, h2v_b * mg_wing,    xp=1*nx/zfac, zm=zfac
-     tvsclm, h2_width,    xp=2*nx/zfac, zm=zfac
+     tvsclm, alog(h1v_b * mg_wing > 10.),    xp=2*nx/zfac, zm=zfac
      tvsclm, hindex5 * mg_wing,  xp=3*nx/zfac, zm=zfac
-     tvsclm, mg_bnd[*,*,20]/(mg_bnd[*,*,21]>0.1), xp=4*nx/zfac, zm=zfac
-     tvsclm, mg_bnd[*,*,20]/(mg_bnd[*,*,19]>0.1), xp=5*nx/zfac, zm=zfac
+     tvsclm, (mg_bnd[*,*,20]/(mg_bnd[*,*,19]>0.1)), xp=4*nx/zfac, zm=zfac
+     tvsclm, mg_bnd[*,*,20]/(mg_bnd[*,*,21]>0.1) < 2. > .2, xp=5*nx/zfac, zm=zfac, cb=99
 
-     tvsclm, hvr < 3. > .3,  xp=0*nx/zfac, yp=ny/zfac, zm=zfac, cb=99
+     tvsclm, mg_bnd[*,*,26],  xp=0*nx/zfac, yp=ny/zfac, zm=zfac, cb=99
      tvsclm, h_wb_width,     xp=1*nx/zfac, yp=ny/zfac, zm=zfac
      tvsclm, h_wb_int,       xp=2*nx/zfac, yp=ny/zfac, zm=zfac
-     tvsclm, h3 < 3.,        xp=3*nx/zfac, yp=ny/zfac, zm=zfac
-     tvsclm, h1,             xp=4*nx/zfac, yp=ny/zfac, zm=zfac
-     tvsclm, alog10(mgh_core > 1.), xp=5*nx/zfac, yp=ny/zfac, zm=zfac
+     tvsclm, alog(reform(xmaxs_h[*,*,2] * mg_wing)>.1),        xp=3*nx/zfac, yp=ny/zfac, zm=zfac
+     tvsclm, h1* mg_wing,             xp=4*nx/zfac, yp=ny/zfac, zm=zfac
+     tvsclm, (k3_b / (h3_b > 0.1)) < 1.9 > .9, xp=5*nx/zfac, yp=ny/zfac, zm=zfac
+     stop
      ;------------------------------------------
      print, 'profile type for the h line (0: reversal free, 1: normal, 5: umbral)'
      for i=0,5 do begin & q=where(type_h eq i, count) &  print, i, count & endfor
@@ -1903,7 +2048,7 @@ endif ;else begin
 
 print, 'profile type for the k line (0: reversal free, 1: normal, 5: umbral)'
 for i=0,5 do begin & q=where(type_k eq i, count) &  print, i, count & endfor
-
+   
 mg_overview = (k3_b * mg_wing)>.1  
 r = percentiles(mg_overview, value=[0.05, 0.25, 0.5, 0.75, 0.95])   
 write_jpeg, name_term+'k3_log.jpg', bytscl(alog(mg_overview > r[0] < r[4])), quality=100
@@ -1928,9 +2073,8 @@ if (do_h eq 1) then begin
     mg_overview = (k3_b / (h3_b > 0.1)) < 1.9 > .9
     r = percentiles(mg_overview, value=[0.05, 0.25, 0.5, 0.75, 0.95])
     write_jpeg, name_term+'k3_2_h3.jpg', bytscl(mg_overview > r[0] < r[4]), quality=100
- endif
-
-
+endif
+   
 if (do_gauss eq 1) then begin
   if (do_h eq 1) then begin;----------- for h+k profiles + /do_gauss
     save, filename=outfile_mg, fe_par, fe_int, xmaxs_k, xmins_k,xmaxs_h, xmins_h, mg_bnd, mg_wing, $
@@ -1938,7 +2082,7 @@ if (do_gauss eq 1) then begin
     k1_width, k2_width, k_wb_width, k_wb_int, kvr, k3_b,k2v_b,k2r_b, mgk_h2v_vel, mgk_h2r_vel, mgk_h3_vel, $
     mgk_h1v_vel, mgk_h1r_vel, cogk_1, cogk_5, mgk_core, kpar, k2v, k2r, k3, kindex1, kindex5, k_spar, gauss_vel_k, k1v_b, k1r_b, type_k,$
     mgh_h1v_vel, mgh_h1r_vel, cogh_1, cogh_5, mgh_core, hpar, h2v, h2r, h3, hindex1, hindex5, h_spar, gauss_vel_h, h1v_b, h1r_b, type_h,$
-    master_h3, master_k3, dispersion_nuv, master_k2v, master_k2r, master_h2v, master_h2r, temporal_gradient, $
+    master_h3, master_k3, dispersion_nuv, master_k2v, master_k2r, master_h2v, master_h2r, temporal_gradient, k_sub_wing, h_sub_wing, $
     em_lines, em_vel, k_spar, k_dpar, k_tpar, h_spar, h_dpar, h_tpar, tpar_v_k, tpar_r_k, dpar_v_k, dpar_r_k , $
     k_fit_gauss, h_fit_gauss
   endif else begin;----------- for k lines profiles + /do_gauss
@@ -1961,7 +2105,7 @@ if (do_gauss eq 1) then begin
   endif else begin;----------- for k lines profiles
     save, filename=outfile_mg, fe_par, fe_int, xmaxs_k, xmins_k, mg_bnd, mg_wing, $
     k1_width, k2_width, k_wb_width, k_wb_int, kvr, k3_b,k2v_b,k2r_b, $
-    mgk_h1v_vel, mgk_h1r_vel, mgk_h2v_vel, mgk_h2r_vel, mgk_h3_vel, h_sub_wing, $
+    mgk_h1v_vel, mgk_h1r_vel, mgk_h2v_vel, mgk_h2r_vel, mgk_h3_vel, $
     cogk_1, cogk_5, mgk_core, kpar, k2v, k2r, k3, kindex1, kindex5, k_spar, gauss_vel_k,$
     master_k3, dispersion_nuv, master_k2v, master_k2r,  temporal_gradient, k1v_b, k1r_b, type_k,$
     em_lines, em_vel
