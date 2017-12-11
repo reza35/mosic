@@ -60,7 +60,6 @@ function perform_double_gaussian, tag, iline, ca_ilo, ca_ihi, pos_line, disper, 
 ;
 ; band[0:2] : similar to H3, H2v, H2r
 ;
-;
 ; Dec 08, 2014 : output for single Gaussian fit
 ; Dec 09, 2014 : program for double Gaussian fit using MPFIT
 ;                single Gaussian fit was completely re-written
