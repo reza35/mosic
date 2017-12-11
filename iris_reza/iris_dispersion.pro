@@ -108,8 +108,8 @@ endif else begin
   vline, rp
   disp_nuv = (0.3)/(rp - lp)
   if (disp_nuv lt 0.03) then begin
-    maximum,  vv[pos[0]-5:pos[0]+4], lpx & print, lpx[3]+ (pos[0] - 5.0)
-    maximum,  vv[pos[1]-4:pos[1]+5], rpx & print, rpx[3]+ (pos[1] - 4.0)
+    maximum,  5, vv[pos[0]-5:pos[0]+4], lpx & print, lpx[3]+ (pos[0] - 5.0)
+    maximum,  4, vv[pos[1]-4:pos[1]+5], rpx & print, rpx[3]+ (pos[1] - 4.0)
     disp_nuv = (0.3)/(rp - lp)
   endif   
 endelse   
@@ -236,7 +236,6 @@ vv = avprof
 print, '-----------------------------------'
 print, 'select rough 280 nm photospheric range'
 read_plot_click, 2, vv, vv, pos
-pos[1] = pos[1] < (n_elements(avprof)-1)
 vv = avprof[pos[0]:pos[1]]     &    s = pos[0]
 print, 'select exact photospheric range'
 read_plot_click, 2, vv, vv, pos

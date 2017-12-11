@@ -264,6 +264,13 @@ if (konti gt 10.) then begin  ; skip this correction off disk
       yfit = res[0] + xx * res[1] + xx^2 * res[2]   
    endif   
    iline2 = (iline2 - yfit) > 0.
+
+   subtracted_wing = iline * konti -  iline2
+   ; if one adds this curve to the 'py' (below), it produces the 'prof'.
+   ; py is the wing-subtracted profile for the Gaussian fitting while prof
+   ; is the original profiel for the line analysis. The emission peaks
+   ; measured by the two methods have a little offset due to this
+   ; curve which can be compensated. 
 endif
 
 ;------------------------------------------------
@@ -274,16 +281,31 @@ core_pos = corepos
 core0 = corepos
 if (disper lt 3.)and(disper gt 2.) then int_area = prof(corepos-29:corepos+29)
 if (disper gt 5.)and(disper lt 6.) then int_area = prof(corepos-14:corepos+14) ; Mg II core region
-int_area = smooth(int_area,3,/edge_truncate)
+;int_area = smooth(int_area,3,/edge_truncate)
 np = n_elements(int_area)
 
 ;------------------------------------------------
+;-- cut-out the line rofile
+;------------------------------------------------
+if (disper lt 3.)and(disper gt 2.) then begin
+   int_area2 = iline2[corepos-29:corepos+29]
+   subtracted_wing = subtracted_wing[corepos-29:corepos+29]
+   py = reform(int_area2[6:np-6])
+   subtracted_wing = subtracted_wing[6:np-6]
+endif
+
+if (disper gt 5.)and(disper lt 6.) then begin
+   int_area2 = iline2[corepos-14:corepos+14]
+   subtracted_wing = subtracted_wing[corepos-14:corepos+14]
+   py = reform(int_area2[3:np-3]) 
+   subtracted_wing = subtracted_wing[3:np-3]
+endif
+
+;int_area2 = smooth(int_area2, 3, /edge_truncate)
+;if (np gt  40) then  py = reform(int_area2[6:np-6]) else py = reform(int_area2[3:np-3]) ; the Gaussian fit range
+;------------------------------------------------
 ;-- Mg II core parameters: Gaussian fit
 ;------------------------------------------------
-if (disper lt 3.)and(disper gt 2.) then int_area2 = iline2(corepos-29:corepos+29)
-if (disper gt 5.)and(disper lt 6.) then int_area2 = iline2(corepos-14:corepos+14)
-int_area2 = smooth(int_area2, 3, /edge_truncate)
-if (np gt  40) then  py = reform(int_area2[6:np-6]) else py = reform(int_area2[3:np-3]) ; the Gaussian fit range
 nnp = n_elements(py)
 fitsg = fltarr(nnp)
 fitdg = fltarr(nnp)
@@ -295,7 +317,7 @@ tpar1 = fltarr(21)
 erg = {type:intarr(1), hpar:fltarr(6), spar:fltarr(9), dpar:fltarr(15),  tpar:fltarr(21), $
        fe_int:fltarr(n_elements(ca_ilo)), band:fltarr(30), eml:fltarr(12), ems:fltarr(4), $
        xmins:fltarr(4,2), xmaxs:fltarr(3,2), xmh1:fltarr(2,2), velpos:fltarr(n_elements(ca_ilo)), $
-       sfit:fltarr(nnp), sprf:fltarr(nnp), dfit:fltarr(nnp), tfit:fltarr(nnp)}
+       sub_wing:fltarr(nnp), sfit:fltarr(nnp), sprf:fltarr(nnp), dfit:fltarr(nnp), tfit:fltarr(nnp)}
 
 bbc = where(int_area gt (-1.0), bppc)
 
@@ -306,62 +328,60 @@ if (bppc le 0) then return, erg
 ;------------------------------------------------
 ;------------------------------------------------
 if (disper lt 3.) then begin 
-u = iline[185:225]
-emb[0] = (mean(u[0:3]) > mean(u[37:*])) > 0.
-lpff, u[15:25], posm  & posm+=15.   &   if (~finite(posm)) then posm=20
+   u = iline[185:225]
+   emb[0] = (mean(u[0:3]) > mean(u[37:*])) > 0.
+   lpff, u[15:25], posm  & posm+=15.   &   if (~finite(posm)) then posm=20
 
-if (u[posm] lt emb[0]) then begin ; absorption line
-   minimum, posm, u, tmp
-   emb[1]=  tmp[4] > 0.
-   embv[0] = tmp[3] + 185.
-endif else begin
-   maximum, posm, u, tmp
-   emb[1]=  tmp[4] > 0.
-   embv[0] = tmp[3] + 185.
-endelse
-
-emb[2] = total(iline[185:225] - emb[0])* disper /konti ; observed equivalent width
-;---------------------------
-u = iline[40:50]
-emb[3] = (mean(u[0:1]) > mean(u[8:9]))>0.
-lpff, u, posm    &   if (~finite(posm)) then posm=5
-emb[4] = iline[posm + 40.] >0.
-emb[5] = total(u - emb[3])* disper/konti  ; observed equivalent width
-embv[1] = posm + 40.
-;---------------------------
-u = iline[165:175]
-emb[6] = (mean(u[0:1]) > mean(u[8:9]))>0.
-lpff, u, posm    &   if (~finite(posm)) then posm=5
-emb[7] = iline[posm + 165.]>0.
-emb[8] = total(u - emb[6])* disper/konti  ; observed equivalent width
-embv[2] = posm + 165.
-;---------------------------
-if (np gt 263) then begin
-  u = iline[252:262]
-  emb[9] = (mean(u[0:1]) > mean(u[8:9]))>0.
-  lpff, u, posm    &   if (~finite(posm)) then posm=5
-  emb[10] = iline[posm + 252.] > 0.
-  emb[11] = total(u - emb[9])* disper /konti ; observed equivalent width
-  embv[3] = posm + 252.
-endif
-;---------------------------
+   if (u[posm] lt emb[0]) then begin ; absorption line
+      minimum, posm, u, tmp
+      emb[1]=  tmp[4] > 0.
+      embv[0] = tmp[3] + 185.
+   endif else begin
+      maximum, posm, u, tmp
+      emb[1]=  tmp[4] > 0.
+      embv[0] = tmp[3] + 185.
+   endelse
+   emb[2] = total(iline[185:225] - emb[0])* disper /konti ; observed equivalent width
+   ;---------------------------
+   u = iline[40:50]
+   emb[3] = (mean(u[0:1]) > mean(u[8:9]))>0.
+   lpff, u, posm    &   if (~finite(posm)) then posm=5
+   emb[4] = iline[posm + 40.] >0.
+   emb[5] = total(u - emb[3])* disper/konti ; observed equivalent width
+   embv[1] = posm + 40.
+   ;---------------------------
+   u = iline[165:175]
+   emb[6] = (mean(u[0:1]) > mean(u[8:9]))>0.
+   lpff, u, posm    &   if (~finite(posm)) then posm=5
+   emb[7] = iline[posm + 165.]>0.
+   emb[8] = total(u - emb[6])* disper/konti ; observed equivalent width
+   embv[2] = posm + 165.
+   ;---------------------------
+   if (np gt 263) then begin
+      u = iline[252:262]
+      emb[9] = (mean(u[0:1]) > mean(u[8:9]))>0.
+      lpff, u, posm    &   if (~finite(posm)) then posm=5
+      emb[10] = iline[posm + 252.] > 0.
+      emb[11] = total(u - emb[9])* disper /konti ; observed equivalent width
+      embv[3] = posm + 252.
+   endif
+   ;---------------------------
 endif
 if (disper gt 3.)and(disper lt 6.) then begin 
    u = iline[145:172]
-emb[0] = (mean(u[0:3]) > mean(u[27:*]))>0.
-lpff, u[12:21], posm  & posm+=12.   &   if (~finite(posm)) then posm=15
+   emb[0] = (mean(u[0:3]) > mean(u[27:*]))>0.
+   lpff, u[12:21], posm  & posm+=12.   &   if (~finite(posm)) then posm=15
 
-if (u[posm] lt emb[0]) then begin ; absorption line
-   minimum, 4., u[12:21], tmp
-   emb[1]=  tmp[4] > 0.
-   embv[0] = tmp[3] + 154.
-endif else begin
-   maximum, 4., u[12:21], tmp
-   emb[1]=  tmp[4] > 0.
-   embv[0] = tmp[3] + 154.
-endelse
-emb[2] = total(iline[145:172] - emb[0])* disper /konti ; observed equivalent width
-
+   if (u[posm] lt emb[0]) then begin ; absorption line
+      minimum, 4., u[12:21], tmp
+      emb[1]=  tmp[4] > 0.
+      embv[0] = tmp[3] + 154.
+   endif else begin
+      maximum, 4., u[12:21], tmp
+      emb[1]=  tmp[4] > 0.
+      embv[0] = tmp[3] + 154.
+   endelse
+   emb[2] = total(iline[145:172] - emb[0])* disper /konti ; observed equivalent width
 endif
 
 ;---------------------------
@@ -1256,7 +1276,7 @@ endif
 ;########################################################################
 ;--  band intensities, similar to Ca II line
 ;########################################################################
-if (disper ge 5.) then begin  ;-------------------------- 5.088 pm/px
+if (disper ge 5.)and(disper lt 6.) then begin  ;-------------------------- 5.088 pm/px
 
   band[0] = total(prof[120:125])    ; ~ K1r
   band[1] = total(prof[85:94])      ; K-line blue wing
@@ -1423,7 +1443,7 @@ if (do_gauss eq 1) then begin
   ;--------------------------------------------------------
   if (ergs.w1/disper gt 8.)or(is_bad eq 1.)or(n_elements(fitsg) lt np)or(chisq1 gt 90.0) then begin
      py0 = median(py, 3)
-     py = gauss_smooth(py0, 1.2, /edge_truncate)
+     py = gauss_smooth(py0, 1.1, /edge_truncate)
      fit0[3] = (fit0[3] + randomn(seed)) > (fit0[3] - 2.0)
      fit0[1] = max(py) > 2.0 < 1.0d4
      range0=[0.2, 0.6, 0.6, 0.6] 
@@ -1489,7 +1509,7 @@ if (do_gauss eq 1) then begin
   if (ergd.w1/disper gt 20.)or(is_bad eq 1.)or(n_elements(fitdg) lt np)or(chisq2 gt 30.) then begin
      ;print, '----------'
      py0 = median(py,3)
-     py = gauss_smooth(py0, 1.2, /edge_truncate)
+     py = gauss_smooth(py0, 1.1, /edge_truncate)
 
      if (disper lt 3.) then width = width > 4.
      fit0 = [v_peak, v_posmax, width+0.1] * 1.0d
@@ -1625,6 +1645,7 @@ if (do_gauss eq 1) then begin
         dg_x1 = ergd.p2 > 2. < (np/2)
         dg_x2 = ergd.p1 < (np-2) 
      endif
+     if (dg_x1 ge dg_x2) then stop
      syn_k3_aux = reform(syn_k3_aux[dg_x1:dg_x2])
      syn_aux = min(syn_k3_aux, pos_aux)
      if (pos_aux eq 0) then pos_aux = n_elements(syn_k3_aux)/2.
@@ -1632,7 +1653,7 @@ if (do_gauss eq 1) then begin
      k3_aux = syn_k3_aux[pos_aux] * 0.7
      ;---------------------------------------------
      py0 = median(py,3)
-     py = gauss_smooth(py0, 1.2, /edge_truncate)
+     py = gauss_smooth(py0, 1.1, /edge_truncate)
      fit0[0] = k3w_init ;(ergd.p1 + ergd.p2) * 0.5d
      fit0[1] = k3_aux
      fit1[0] = max(py) * 0.75
@@ -1810,7 +1831,6 @@ if (plt ge 1)and(do_gauss eq 1) then begin
 endif
 ;############################################################################################
 ;############################################################################################
-
 ;----------------------------
 ;--  Set output parameters
 ;----------------------------
@@ -1827,6 +1847,8 @@ erg.sprf = py
 erg.sfit = fitsg
 erg.dfit = fitdg
 erg.tfit = fittg
+
+erg.sub_wing = subtracted_wing
 
 
 erg.velpos = velpos       ; 6

@@ -48,6 +48,10 @@ pro analyze_iris, filepath, do_mg=do_mg, do_gauss=do_gauss, do_cii=do_cii, do_si
 ;  
 ; Nov 29, 2017 : limb flag  
 ;  
+; Dec 04, 2017 : the output filename keeps track of the input filename (date and time)
+;
+; Dec 11, 2017 : creates new overview Jpeg output from the Mg II data
+;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
 ;-
@@ -201,22 +205,23 @@ cc = strtrim(num2string(cycle),1)
 ;------------------------------------------------------
 ; set name of output files
 ;------------------------------------------------------
-outfile_cont = inpath + 'iris_cont_analyzed_scan_'+cc+'.sav'
-outfile_cii  = inpath + 'iris_cii_analyzed_scan_'+cc+'.sav'
-outfile_si   = inpath + 'iris_si_analyzed_scan_'+cc+'.sav'
-outfile_oi   = inpath + 'iris_oi_analyzed_scan_'+cc+'.sav'
-outfile_cl   = inpath + 'iris_cl_analyzed_scan_'+cc+'.sav'
-outfile_mg   = inpath + 'iris_mg_analyzed_scan_'+cc+'.sav'
-outfile_nuv_temp = inpath + 'iris_NUV_temporal_'+cc+'.sav'
-outfile_fuv_temp = inpath + 'iris_FUV_temporal_'+cc+'.sav'
+s = strsplit(files_d.files[0], '.,_',/extract)
+name_term = inpath + s[0] +'_'+ s[1] +'_'+ s[2] +'_'+ s[3]+'_'
 
+outfile_cont = name_term + 'cont_analyzed.sav'
+outfile_cii  = name_term + 'cii_analyzed.sav'
+outfile_si   = name_term + 'si_analyzed.sav'
+outfile_oi   = name_term + 'oi_analyzed.sav'
+outfile_cl   = name_term + 'cl_analyzed.sav'
+outfile_mg   = name_term + 'mg_analyzed.sav'
+outfile_mg_em = name_term + 'mg_em_analyzed.sav'
+outfile_nuv_temp = name_term + 'NUV_temporal.sav'
+outfile_fuv_temp = name_term + 'FUV_temporal.sav'
+avfile = name_term +'avprof.sav'
 
 ;------------------------------
 ; the spectral dispersion
 ;------------------------------
-s = strsplit(files_d.files[0], '.,_',/extract)
-avfile = inpath + s[0] +'_'+ s[1] +'_'+ s[2] +'_'+ s[3]+'_'+'avprof.sav'
-
 h = check_if_file_exists(avfile)
 if (string2num(h[1]) ne 1.) then begin 
    save, filename=avfile, avprof, hed
@@ -525,7 +530,21 @@ loadct, 0, /silent
 save, filename=outfile_cont, kont, cont, fe, i_cont, temporal_gradient
 
 endif
+
+; to keep the filenames backward compatible
+h = check_if_file_exists(outfile_cont)
+if (string2num(h[1]) ne 1.) then begin 
+   old_filename = inpath + 'iris_cont_analyzed_scan_'+cc+'.sav'
+   spawn, 'mv '+old_filename+'  '+outfile_cont
+   
+   old_filename = inpath + 'iris_NUV_temporal_'+cc+'.sav'
+   spawn, 'mv '+old_filename+'  '+outfile_nuv_temp
+   
+   old_filename = inpath + 'iris_FUV_temporal_'+cc+'.sav'
+   spawn, 'mv '+old_filename+'  '+outfile_fuv_temp
+endif
 restore, outfile_cont
+
 
 
 ;------------------------------------------------------------------
@@ -1880,6 +1899,33 @@ endif ;else begin
 
 print, 'profile type for the k line (0: reversal free, 1: normal, 5: umbral)'
 for i=0,5 do begin & q=where(type_k eq i, count) &  print, i, count & endfor
+
+mg_overview = (k3_b * mg_wing)>.1  
+r = percentiles(mg_overview, value=[0.05, 0.25, 0.5, 0.75, 0.95])   
+write_jpeg, name_term+'k3_log.jpg', bytscl(alog(mg_overview > r[0] < r[4])), quality=100
+mg_overview = (k3_b * mg_wing)>.1
+r = percentiles(mg_overview, value=[0.05, 0.25, 0.5, 0.75, 0.95])
+write_jpeg, name_term+'k3.jpg', bytscl(mg_overview > r[0] < r[4]), quality=100
+mg_overview = (k1r_b * mg_wing > 10.)
+r = percentiles(mg_overview, value=[0.05, 0.25, 0.5, 0.75, 0.95])
+write_jpeg, name_term+'k1r_log.jpg', bytscl(alog(mg_overview > r[0] < r[4])), quality=100
+mg_overview = mg_bnd[*,*,7]/(mg_bnd[*,*,6]>0.1) < 8. > .2
+r = percentiles(mg_overview, value=[0.05, 0.25, 0.5, 0.75, 0.95])
+write_jpeg, name_term+'em_strength.jpg', bytscl(mg_overview > r[0] < r[4]), quality=100
+
+mg_overview = reform(mg_bnd[*,*,15]) & q=where(mg_overview gt 1.)
+r = percentiles(mg_overview(q), value=[0.05, 0.25, 0.5, 0.75, 0.95])
+write_jpeg, name_term+'k_cog.jpg', bytscl(mg_overview > r[0] < r[4]), quality=100
+   
+mg_overview = ((mg_bnd[*,*,0]/(mg_bnd[*,*,5])>.1) > .3)
+r = percentiles(mg_overview, value=[0.05, 0.25, 0.5, 0.75, 0.95])
+write_jpeg, name_term+'k1r_2_wing.jpg', bytscl(alog(mg_overview > r[0] < r[4])), quality=100
+if (do_h eq 1) then begin 
+    mg_overview = (k3_b / (h3_b > 0.1)) < 1.9 > .9
+    r = percentiles(mg_overview, value=[0.05, 0.25, 0.5, 0.75, 0.95])
+    write_jpeg, name_term+'k3_2_h3.jpg', bytscl(mg_overview > r[0] < r[4]), quality=100
+ endif
+
 
 if (do_gauss eq 1) then begin
   if (do_h eq 1) then begin;----------- for h+k profiles + /do_gauss
