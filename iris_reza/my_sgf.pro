@@ -10,7 +10,7 @@ function my_sgf, x, y, e, fit0, range0, dlambda, good, double = double
 ; in a small range.
 ;
 ; x/y/e : x/y of the profile and its error
-; fit0 : initial guess values  
+; fit0 : initial guess values
 ; range0 : the range for parameters in fit0
 ; dlambda : scaling the range, usually 1.0d  
 ;
