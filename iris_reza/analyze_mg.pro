@@ -264,14 +264,14 @@ if (konti gt 10.) then begin  ; skip this correction off disk
       yfit = res[0] + xx * res[1] + xx^2 * res[2]   
    endif   
    iline2 = (iline2 - yfit) > 0.
-
+endif
    subtracted_wing = iline * konti -  iline2
    ; if one adds this curve to the 'py' (below), it produces the 'prof'.
    ; py is the wing-subtracted profile for the Gaussian fitting while prof
    ; is the original profiel for the line analysis. The emission peaks
    ; measured by the two methods have a little offset due to this
    ; curve which can be compensated. 
-endif
+
 
 ;------------------------------------------------
 ;-- Mg II core parameters: profile analysis
