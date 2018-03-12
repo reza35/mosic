@@ -164,6 +164,7 @@ function analyze_mg, line_profile, konti, ca_ilo, ca_ihi, master, $
 ; Nov 12, 2016 : random initialization of Gaussian fits was improved.
 ; Sep 21, 2017 : improved k3 position in noisy data.
 ; Nov 20, 2017 : zeta controls the random processes.
+; Mar 12, 2018 : bug fix in limb correction.
 ;  
 ; R.Rezaei @ IAC                         e-mail:  rrezaei@iac.es      
 ;===============================================================
@@ -252,7 +253,7 @@ endif  else begin
    u = [u, findgen(30/dfac)+gravity1 - 95/dfac, findgen(8/dfac)+gravity1 + 55/dfac]
 endelse
 
-if (konti gt 10.) then begin  ; skip this correction off disk
+if (konti gt 50.) then begin  ; skip this correction off disk
    iline3 = median(iline2, 3)
    res = poly_fit(u, iline3[u], 3, /double)
    xx = findgen(n_elements(line_profile))
