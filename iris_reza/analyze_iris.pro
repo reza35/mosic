@@ -435,7 +435,7 @@ tvsclm, cont,      xp=2*nx/zfac, yp=0, zm=zfac
 wait, 2.
 ;stop
 s = percentiles(kont, value=[0.6, .92, .99])
-q = where((kont gt s[1])and(kont lt s[2]))
+q = where((kont ge s[1])and(kont le s[2]))
 i_cont = good_mean(cont(q))
 cont /= i_cont
 if (max(cont) gt 10.)or(max(cont lt 0.9)) then begin
